@@ -35,7 +35,7 @@ export function updateRoute(req: express.Request, res: express.Response, next: e
     
 }
 
-export function patchRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
+export function listRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const query = req.body as IQuery;
     const dbName = req.header('db');
     

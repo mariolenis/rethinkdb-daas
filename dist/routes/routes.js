@@ -17,7 +17,7 @@ exports.putRoute = putRoute;
 function updateRoute(req, res, next) {
 }
 exports.updateRoute = updateRoute;
-function patchRoute(req, res, next) {
+function listRoute(req, res, next) {
     var query = req.body;
     var dbName = req.header('db');
     var dbSuscription = db.connectDB({ host: 'localhost', port: 28015, db: dbName })
@@ -28,7 +28,7 @@ function patchRoute(req, res, next) {
             dbSuscription.unsubscribe();
     }, function (err) { return res.status(400).json(err); });
 }
-exports.patchRoute = patchRoute;
+exports.listRoute = listRoute;
 function filterRoute(req, res, next) {
 }
 exports.filterRoute = filterRoute;
