@@ -3,6 +3,8 @@ var r = require("rethinkdb");
 var Observable_1 = require("rxjs/Observable");
 /**
  * connectDB()
+ * @description opens connection
+ * @param dbconfig: r.ConnectionOptions
  */
 //<editor-fold defaultstate="collapsed" desc="connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection>">
 function connectDB(dbconfig) {
@@ -20,6 +22,8 @@ exports.connectDB = connectDB;
 //</editor-fold>
 /**
  * closeConn()
+ * @description Close connection
+ * @param conn: r.Conneciton
  */
 //<editor-fold defaultstate="collapsed" desc="closeConn(conn: r.Connection): Observable<r.Connection>">
 function closeConn(conn) {
@@ -37,6 +41,10 @@ exports.closeConn = closeConn;
 //</editor-fold>
 /**
  * insert()
+ * @description Inserts on db
+ * @param conn: r.Conneciton
+ * @param table: string
+ * @param reducer: {indexName : string, value: string}
  */
 //<editor-fold defaultstate="collapsed" desc="insertOnDB(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 function insert(conn, table, object) {
@@ -55,9 +63,14 @@ exports.insert = insert;
 //</editor-fold>
 /**
  * list()
+ * @description find
+ * @param conn: r.Conneciton
+ * @param table: string
+ * @param limit: number
+ * @param reducer: {indexName : string, value: string}
  */
-//<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, index?: {index: string, value: string}, limit?: number ): Observable<Object[]>">
-function list(conn, table, index, limit) {
+//<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: string} ): Observable<Object[]>">
+function list(conn, table, limit, index) {
     return new Observable_1.Observable(function (o) {
         var query;
         if (!!index)
@@ -89,13 +102,16 @@ exports.list = list;
  * @param conn: r.Conneciton
  * @param table: string
  * @param reducer: {indexName : string, value: string}
+ * @param limit: number
  */
-//<editor-fold defaultstate="collapsed" desc="filter(conn: r.Connection, table: string, reducer: {index: string, value: string}): Observable<Object[]>">
-function filter(conn, table, reducer) {
+//<editor-fold defaultstate="collapsed" desc="filter(conn: r.Connection, table: string, reducer: {index: string, value: string}, limit?: number): Observable<Object[]>">
+function filter(conn, table, reducer, limit) {
     return new Observable_1.Observable(function (o) {
         var query = r.table(table).filter(function (doc) {
             return doc(reducer.index).indexOf(reducer.value);
         });
+        if (limit)
+            query = query.limit(limit);
         query.run(conn, function (err, cursor) {
             if (err)
                 o.error({ message: 'Error retriving info ' + err });

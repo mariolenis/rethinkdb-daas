@@ -4,6 +4,8 @@ import { Observer } from 'rxjs/Observer';
 
 /**
  * connectDB()
+ * @description opens connection
+ * @param dbconfig: r.ConnectionOptions
  */
 //<editor-fold defaultstate="collapsed" desc="connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection>">
 export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection> {
@@ -22,6 +24,8 @@ export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connectio
 
 /**
  * closeConn()
+ * @description Close connection
+ * @param conn: r.Conneciton
  */
 //<editor-fold defaultstate="collapsed" desc="closeConn(conn: r.Connection): Observable<r.Connection>">
 export function closeConn(conn: r.Connection): Observable<r.Connection> {
@@ -39,6 +43,10 @@ export function closeConn(conn: r.Connection): Observable<r.Connection> {
 
 /**
  * insert()
+ * @description Inserts on db
+ * @param conn: r.Conneciton
+ * @param table: string
+ * @param reducer: {indexName : string, value: string}
  */
 //<editor-fold defaultstate="collapsed" desc="insertOnDB(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 export function insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {    
@@ -58,9 +66,14 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
 
 /**
  * list()
+ * @description find 
+ * @param conn: r.Conneciton
+ * @param table: string
+ * @param limit: number
+ * @param reducer: {indexName : string, value: string}
  */
-//<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, index?: {index: string, value: string}, limit?: number ): Observable<Object[]>">
-export function list(conn: r.Connection, table: string, index?: {index: string, value: string}, limit?: number ): Observable<Object[]> {
+//<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: string} ): Observable<Object[]>">
+export function list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: string} ): Observable<Object[]> {
     return new Observable((o: Observer<Object[]>) => {
         
         let query: r.Table | r.Sequence;        
@@ -95,14 +108,19 @@ export function list(conn: r.Connection, table: string, index?: {index: string, 
  * @param conn: r.Conneciton
  * @param table: string
  * @param reducer: {indexName : string, value: string}
+ * @param limit: number
  */
-//<editor-fold defaultstate="collapsed" desc="filter(conn: r.Connection, table: string, reducer: {index: string, value: string}): Observable<Object[]>">
-export function filter(conn: r.Connection, table: string, reducer: {index: string, value: string}): Observable<Object[]> {
+//<editor-fold defaultstate="collapsed" desc="filter(conn: r.Connection, table: string, reducer: {index: string, value: string}, limit?: number): Observable<Object[]>">
+export function filter(conn: r.Connection, table: string, reducer: {index: string, value: string}, limit?: number): Observable<Object[]> {
     return new Observable((o: Observer<Object[]>) => {
         
-        const query = r.table(table).filter((doc: (index: string) => string) => {            
+        let query = r.table(table).filter((doc: (index: string) => string) => {            
             return doc(reducer.index).indexOf(reducer.value);
         });
+        
+        if (limit)
+            query = query.limit(limit);
+            
         query.run(conn, (err, cursor) => {
             if (err)
                 o.error({message: 'Error retriving info ' + err});
