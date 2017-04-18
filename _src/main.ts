@@ -14,7 +14,7 @@ export class Server {
         this.app.use(bodyParser.urlencoded({ extended: true }));
         
         this.app.put('/api', fn.putRoute.bind(fn.putRoute));
-        
+        this.app.patch('/api', fn.patchRoute.bind(fn.patchRoute));
         this.app.get('/api', (req, res: express.Response) => {
             res.status(200).send('API Ready!');
         })

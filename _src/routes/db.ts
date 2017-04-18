@@ -62,11 +62,11 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
  * @param reducer: {indexName : string, value: string}
  */
 //<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: string} ): Observable<Object[]>">
-export function list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: string} ): Observable<Object[]> {
+export function list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: any} ): Observable<Object[]> {
     return new Observable((o: Observer<Object[]>) => {
         
         let query: r.Table | r.Sequence;        
-        if (!!index)
+        if (!index)
             query = r.table(table);
         else
             query = r.table(table).getAll(index.value, {index: index.index});

@@ -9,17 +9,26 @@ function putRoute(req, res, next) {
         .flatMap(function (conn) { return db.insert(conn, query.table, query.object); })
         .subscribe(function (response) {
         res.status(200).json(response);
-        // Finalizar la conexión
-        dbSuscription.unsubscribe();
+        if (!dbSuscription.closed)
+            dbSuscription.unsubscribe();
     }, function (err) { return res.status(400).json(err); });
 }
 exports.putRoute = putRoute;
 function updateRoute(req, res, next) {
 }
 exports.updateRoute = updateRoute;
-function getRoute(req, res, next) {
+function patchRoute(req, res, next) {
+    var query = req.body;
+    var dbName = req.header('db');
+    var dbSuscription = db.connectDB({ host: 'localhost', port: 28015, db: dbName })
+        .flatMap(function (conn) { return db.list(conn, query.table, parseInt(query.limit), query.filter); })
+        .subscribe(function (response) {
+        res.status(200).json(response);
+        if (!dbSuscription.closed)
+            dbSuscription.unsubscribe();
+    }, function (err) { return res.status(400).json(err); });
 }
-exports.getRoute = getRoute;
+exports.patchRoute = patchRoute;
 function filterRoute(req, res, next) {
 }
 exports.filterRoute = filterRoute;

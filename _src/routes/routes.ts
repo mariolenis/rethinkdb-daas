@@ -24,7 +24,8 @@ export function putRoute(req: express.Request, res: express.Response, next: expr
             response => {
                 res.status(200).json(response);
                 // Finalizar la conexión
-                dbSuscription.unsubscribe();
+                if (!dbSuscription.closed)
+                    dbSuscription.unsubscribe();
             },
             err => res.status(400).json(err)
         );
@@ -34,8 +35,21 @@ export function updateRoute(req: express.Request, res: express.Response, next: e
     
 }
 
-export function getRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
+export function patchRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    const query = req.body as IQuery;
+    const dbName = req.header('db');
     
+    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: dbName})
+        .flatMap(conn => db.list(conn, query.table, parseInt(query.limit), query.filter))
+        .subscribe(
+            response => {
+                res.status(200).json(response);
+                // Finalizar la conexión
+                if (!dbSuscription.closed)
+                    dbSuscription.unsubscribe();
+            },
+            err => res.status(400).json(err)
+        );
 }
 
 export function filterRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
