@@ -11,8 +11,8 @@
   "author": "Jorge Mario Lenis",
   "contributors": [],
   "scripts": {
-    "start": "node main.js",
-    "_node:w": "nodemon --watch main.js"
+    "start": "node dist/main.js",
+    "_node:w": "nodemon --watch dist"
   },
   "dependencies": {
     "body-parser": "^1.17.1",
