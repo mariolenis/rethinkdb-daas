@@ -9,35 +9,24 @@ var Observable_1 = require("rxjs/Observable");
 //<editor-fold defaultstate="collapsed" desc="connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection>">
 function connectDB(dbconfig) {
     return new Observable_1.Observable(function (o) {
+        var connection;
         r.connect(dbconfig, function (err, conn) {
             if (err)
                 o.error({ message: 'Connection failed ' + err });
-            else
+            else {
+                connection = conn;
                 o.next(conn);
-            o.complete();
+            }
         });
+        return function () {
+            if (!!connection && connection.open) {
+                console.log('Cerrando conexión a db');
+                connection.close();
+            }
+        };
     });
 }
 exports.connectDB = connectDB;
-//</editor-fold>
-/**
- * closeConn()
- * @description Close connection
- * @param conn: r.Conneciton
- */
-//<editor-fold defaultstate="collapsed" desc="closeConn(conn: r.Connection): Observable<r.Connection>">
-function closeConn(conn) {
-    return new Observable_1.Observable(function (o) {
-        conn.close(function (err) {
-            if (err)
-                o.error({ message: 'The connection can not be closed yet ' + err });
-            else
-                o.next(conn);
-            o.complete();
-        });
-    });
-}
-exports.closeConn = closeConn;
 //</editor-fold>
 /**
  * insert()

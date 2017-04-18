@@ -15,6 +15,7 @@
     "_node:w": "nodemon --watch dist"
   },
   "dependencies": {
+    "@types/morgan": "^1.7.32",
     "body-parser": "^1.17.1",
     "express": "^4.15.2",
     "rethinkdb": "^2.3.3",
