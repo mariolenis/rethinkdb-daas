@@ -11,7 +11,7 @@ import { Observer } from 'rxjs/Observer';
 export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection> {
     return new Observable((o: Observer<r.Connection>) => {        
         
-        let connection: r.Connection
+        let connection: r.Connection;
         
         r.connect(dbconfig, (err, conn) => {
             if (err)
@@ -23,10 +23,8 @@ export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connectio
         });
         
         return () => {
-            if (!!connection && connection.open) {
-                console.log('Cerrando conexión a db');
+            if (!!connection && connection.open)
                 connection.close();
-            }
         }
     });
 }
@@ -37,14 +35,14 @@ export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connectio
  * @description Inserts on db
  * @param conn: r.Conneciton
  * @param table: string
- * @param reducer: {indexName : string, value: string}
+ * @param object: Object
  */
 //<editor-fold defaultstate="collapsed" desc="insertOnDB(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 export function insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {    
     return new Observable((o: Observer<r.WriteResult>) => {
         
         const query: r.Operation<r.WriteResult> = r.table(table).insert(object);
-        query.run(conn, (err, result) => {
+        query.run(conn, (err, result) => {            
             if (err || result.errors > 0)
                 o.error({message: 'Query failed ' + err, result: result})
             else 

@@ -5,13 +5,13 @@ require("rxjs/add/operator/map");
 function putRoute(req, res, next) {
     var query = req.body;
     var dbName = req.header('db');
-    var dbSuscription = db.connectDB({ host: 'localhost', port: 29015, db: dbName })
+    var dbSuscription = db.connectDB({ host: 'localhost', port: 28015, db: dbName })
         .flatMap(function (conn) { return db.insert(conn, query.table, query.object); })
-        .map(function (response) { return res.status(200).json(response); })
-        .subscribe(function () { }, function (err) { return res.status(400).json(err); }, function () {
+        .subscribe(function (response) {
+        res.status(200).json(response);
+        // Finalizar la conexión
         dbSuscription.unsubscribe();
-        next();
-    });
+    }, function (err) { return res.status(400).json(err); });
 }
 exports.putRoute = putRoute;
 function updateRoute(req, res, next) {

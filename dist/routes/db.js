@@ -19,10 +19,8 @@ function connectDB(dbconfig) {
             }
         });
         return function () {
-            if (!!connection && connection.open) {
-                console.log('Cerrando conexión a db');
+            if (!!connection && connection.open)
                 connection.close();
-            }
         };
     });
 }
@@ -33,7 +31,7 @@ exports.connectDB = connectDB;
  * @description Inserts on db
  * @param conn: r.Conneciton
  * @param table: string
- * @param reducer: {indexName : string, value: string}
+ * @param object: Object
  */
 //<editor-fold defaultstate="collapsed" desc="insertOnDB(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 function insert(conn, table, object) {

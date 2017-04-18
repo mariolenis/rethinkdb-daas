@@ -18,16 +18,15 @@ export function putRoute(req: express.Request, res: express.Response, next: expr
     const query = req.body as IQuery;
     const dbName = req.header('db');
     
-    let dbSuscription = db.connectDB({host: 'localhost', port: 29015, db: dbName})
+    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: dbName})
         .flatMap(conn => db.insert(conn, query.table, query.object))
-        .map(response => res.status(200).json(response))
         .subscribe(
-            () => {},
-            err => res.status(400).json(err),
-            () => {
+            response => {
+                res.status(200).json(response);
+                // Finalizar la conexión
                 dbSuscription.unsubscribe();
-                next();
-            }
+            },
+            err => res.status(400).json(err)
         );
 }
 
