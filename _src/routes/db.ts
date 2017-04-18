@@ -2,8 +2,6 @@ import * as r from 'rethinkdb';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 
-import 'rxjs/add/operator/map';
-
 /**
  * connectDB()
  */
@@ -145,5 +143,24 @@ export function update(conn: r.Connection, table: string, index: {index: string,
 }
 //</editor-fold>
 
-
-
+/**
+ * remove()
+ * @description Function that removes an element from db
+ * @param conn: r.Conneciton
+ * @param table: string
+ * @param filter: {indexName : string, value: string}
+ */
+//<editor-fold defaultstate="collapsed" desc="remove(conn: r.Connection, table: string, filter:{index: string, value: string}): Observable<r.WriteResult>">
+export function remove(conn: r.Connection, table: string, filter:{index: string, value: string}): Observable<r.WriteResult> {
+    return new Observable((o: Observer<r.WriteResult>) => {
+        const query = r.table(table).getAll(filter.value, {index: filter.index}).delete();
+        query.run(conn, (err, result) => {
+            if (err)
+                o.error({message: 'The operation can not be done ' + err});
+            else
+                o.next(result);
+            o.complete();
+        })
+    });
+}
+//</editor-fold>

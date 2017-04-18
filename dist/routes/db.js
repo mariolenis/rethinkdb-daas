@@ -1,7 +1,6 @@
 "use strict";
 var r = require("rethinkdb");
 var Observable_1 = require("rxjs/Observable");
-require("rxjs/add/operator/map");
 /**
  * connectDB()
  */
@@ -135,5 +134,27 @@ function update(conn, table, index, object) {
     });
 }
 exports.update = update;
+//</editor-fold>
+/**
+ * remove()
+ * @description Function that removes an element from db
+ * @param conn: r.Conneciton
+ * @param table: string
+ * @param filter: {indexName : string, value: string}
+ */
+//<editor-fold defaultstate="collapsed" desc="remove(conn: r.Connection, table: string, filter:{index: string, value: string}): Observable<r.WriteResult>">
+function remove(conn, table, filter) {
+    return new Observable_1.Observable(function (o) {
+        var query = r.table(table).getAll(filter.value, { index: filter.index }).delete();
+        query.run(conn, function (err, result) {
+            if (err)
+                o.error({ message: 'The operation can not be done ' + err });
+            else
+                o.next(result);
+            o.complete();
+        });
+    });
+}
+exports.remove = remove;
 //</editor-fold>
 //# sourceMappingURL=db.js.map
