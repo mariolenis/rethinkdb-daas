@@ -1,15 +1,32 @@
 {
-    "name": "rethinkdb-daas",
-    "version": "1.0.0",
-    "keywords": [
-        "util",
-        "functional",
-        "server",
-        "client",
-        "browser"
-    ],
-    "author": "kerberus",
-    "contributors": [
-    ],
-    "dependencies": {}
+  "name": "rethinkdb-daas",
+  "version": "0.0.1-alpha.0",
+  "licence": "MIT",
+  "keywords": [
+    "RethinkDB",
+    "NodeJS",
+    "Daas",
+    "Socket.IO"
+  ],
+  "author": "Jorge Mario Lenis",
+  "contributors": [],
+  "scripts": {
+    "start": "node main.js",
+    "_node:w": "nodemon --watch main.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "rethinkdb": "^2.3.3",
+    "rxjs": "^5.3.0",
+    "socket.io": "^1.7.3"
+  },
+  "devDependencies": {
+    "@types/bluebird": "^3.5.2",
+    "@types/body-parser": "^1.16.3",
+    "@types/express": "^4.0.35",
+    "@types/rethinkdb": "^2.3.2",
+    "@types/socket.io": "^1.4.29",
+    "nodemon": "^1.11.0"
+  }
 }

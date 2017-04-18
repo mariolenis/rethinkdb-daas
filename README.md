@@ -1,7 +1,8 @@
 
-# RethinkDB-Daas
-==============
-RethinkDB as Daas with realtime + socketio
+# RethinkDB-DaaS
+RethinkDB as DaaS with realtime + socket.io
 
 ## Installation
-- Download rethink from https://www.rethinkdb.com/docs/install/
+- Verify you already have NodeJS installed.
+- Download rethink from [RethinkDB Website](https://www.rethinkdb.com/docs/install/)
+- 
