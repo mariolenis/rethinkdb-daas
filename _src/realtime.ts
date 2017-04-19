@@ -14,13 +14,12 @@ export class Realtime {
         this.nameSpaces = [];        
         this.ioSocket.on('connection', (socket: SocketIO.Socket) => {
             
-            console.log("Cliente " + socket.id + " conectado");
-            
+            // Joining to room according to table
             socket.on('join', (room: string) => {
                 socket.join(room);
             });
             
-            // Desconexión
+            // Disconnect
             socket.on('disconnect', () => {
                 console.log("Cliente desconectado " + socket.id);
             });

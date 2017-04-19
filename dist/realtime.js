@@ -7,7 +7,6 @@ var Realtime = (function () {
         this.ioSocket = ioSocket;
         this.nameSpaces = [];
         this.ioSocket.on('connection', function (socket) {
-            console.log("Cliente " + socket.id + " conectado");
             socket.on('join', function (room) {
                 socket.join(room);
             });
