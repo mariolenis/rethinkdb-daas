@@ -171,3 +171,15 @@ export function remove(conn: r.Connection, table: string, filter:{index: string,
     });
 }
 //</editor-fold>
+
+/*
+ * changes()
+ */
+export function changes(conn: r.Connection, table: string): Observable<{new_val: Object, old_val: Object}> {
+    return new Observable((o: Observer<Object>) => {
+        const changes = r.table(table).changes();
+        changes.run(conn, (err, cursor) => {            
+            cursor.each((err, row) => o.next(row))
+        });
+    })
+}

@@ -1,5 +1,6 @@
 import * as express from 'express';
 import * as db from './db';
+import * as socketio from 'socket.io'
 
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/map';
