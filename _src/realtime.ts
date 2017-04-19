@@ -27,6 +27,7 @@ export class Realtime {
     }
     
     enrollNameSpace(req: express.Request, next: express.NextFunction) {
+        
         let dbName  = req.header('db');
         let table   = (req.body as {table: string}).table;
         let hashid  = crypto.createHash('md5').update(dbName + table).digest('hex');;
