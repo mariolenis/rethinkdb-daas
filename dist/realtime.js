@@ -2,7 +2,6 @@
 var _ = require("lodash");
 var db = require("./routes/db");
 var crypto = require("crypto");
-require("rxjs/add/observable/of");
 var Realtime = (function () {
     function Realtime(ioSocket) {
         this.ioSocket = ioSocket;

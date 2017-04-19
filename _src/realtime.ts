@@ -4,8 +4,6 @@ import * as db from './routes/db';
 import * as crypto from 'crypto';
 import {Subscription} from 'rxjs/Subscription';
 
-import 'rxjs/add/observable/of';
-
 interface INameSpace {id: string, subs: Subscription}
 
 export class Realtime {
