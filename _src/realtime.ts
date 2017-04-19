@@ -2,7 +2,7 @@ import * as express from 'express';
 import * as _ from 'lodash';
 import * as db from './routes/db';
 import * as crypto from 'crypto';
-import {Subscription} from 'rxjs/Subscription';
+import { Subscription } from 'rxjs/Subscription';
 
 interface INameSpace {id: string, subs: Subscription}
 
@@ -15,6 +15,10 @@ export class Realtime {
         this.ioSocket.on('connection', (socket: SocketIO.Socket) => {
             
             console.log("Cliente " + socket.id + " conectado");
+            
+            socket.on('join', (room: string) => {
+                socket.join(room);
+            });
             
             // Desconexión
             socket.on('disconnect', () => {

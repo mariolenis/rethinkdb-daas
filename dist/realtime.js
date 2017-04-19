@@ -8,6 +8,9 @@ var Realtime = (function () {
         this.nameSpaces = [];
         this.ioSocket.on('connection', function (socket) {
             console.log("Cliente " + socket.id + " conectado");
+            socket.on('join', function (room) {
+                socket.join(room);
+            });
             socket.on('disconnect', function () {
                 console.log("Cliente desconectado " + socket.id);
             });
