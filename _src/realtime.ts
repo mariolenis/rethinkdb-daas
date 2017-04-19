@@ -1,6 +1,5 @@
 import * as express from 'express';
 import * as _ from 'lodash';
-import * as r from 'rethinkdb';
 import * as db from './routes/db';
 import * as crypto from 'crypto';
 import {Subscription} from 'rxjs/Subscription';
@@ -27,9 +26,9 @@ export class Realtime {
     }
     
     enrollNameSpace(req: express.Request, next: express.NextFunction) {
-        let dbName = req.header('db');
-        let table = (req.body as {table: string}).table;
-        let hashid = crypto.createHash('md5').update(dbName + table).digest('hex');;
+        let dbName  = req.header('db');
+        let table   = (req.body as {table: string}).table;
+        let hashid  = crypto.createHash('md5').update(dbName + table).digest('hex');;
         
         let nsp = _.find(this.nameSpaces, {id: hashid});
         
