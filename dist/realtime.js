@@ -29,7 +29,7 @@ var Realtime = (function () {
                 subs: db.connectDB({ host: 'localhost', port: 28015, db: dbName })
                     .flatMap(function (conn) { return db.changes(conn, table); })
                     .subscribe(function (changes) {
-                    _this.ioSocket.of('/' + dbName).to(table).emit(JSON.stringify(changes));
+                    _this.ioSocket.of('/' + dbName).to(table).emit('update', JSON.stringify(changes));
                 })
             };
             this.nameSpaces.push(nsp);

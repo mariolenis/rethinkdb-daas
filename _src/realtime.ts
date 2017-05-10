@@ -41,7 +41,7 @@ export class Realtime {
                 subs: db.connectDB({host: 'localhost', port: 28015, db: dbName})
                     .flatMap(conn => db.changes(conn, table))                    
                     .subscribe(changes => {
-                        this.ioSocket.of('/' + dbName).to(table).emit(JSON.stringify(changes));
+                        this.ioSocket.of('/' + dbName).to(table).emit('update', JSON.stringify(changes));
                     })
             }
             this.nameSpaces.push(nsp);
