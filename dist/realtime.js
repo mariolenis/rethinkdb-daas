@@ -2,6 +2,7 @@
 var _ = require("lodash");
 var db = require("./routes/db");
 var crypto = require("crypto");
+var env_config_1 = require("./routes/env.config");
 var Realtime = (function () {
     function Realtime(ioSocket) {
         var _this = this;
@@ -11,10 +12,16 @@ var Realtime = (function () {
             console.log('Client Connected ' + socket.id);
             socket.on('join', function (conn) {
                 try {
-                    var connRequest = JSON.parse(conn);
-                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest.db);
-                    _this.enrollRoom(connRequest);
-                    socket.join(connRequest.db);
+                    var connRequest_1 = JSON.parse(conn);
+                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest_1.db);
+                    _this.enrollRoom(connRequest_1);
+                    db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb })
+                        .flatMap(function (conn) { return db.auth(conn, connRequest_1.api_key); })
+                        .subscribe(function (isAuth) {
+                        isAuth ?
+                            socket.join(connRequest_1.db) :
+                            socket.emit('err', 'Unathorized to db ' + connRequest_1.db);
+                    });
                 }
                 catch (e) {
                     console.error(e);
@@ -34,7 +41,7 @@ var Realtime = (function () {
             console.log('[realtime.enrollNameSpace] Enroll (' + query.db + ') for ' + query.table);
             observer = {
                 id: hashid,
-                subs: db.connectDB({ host: 'localhost', port: 28015, db: query.db })
+                subs: db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
                     .flatMap(function (conn) { return db.changes(conn, query.table); })
                     .subscribe(function (changes) {
                     _this.ioSocket.to(query.db).emit(query.table, JSON.stringify(changes));

@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as db from './routes/db';
 import * as crypto from 'crypto';
 import { Subscription } from 'rxjs/Subscription';
+import { rethinkDBConfig } from './routes/env.config';
 
 interface IObservableWatcher {id: string, subs: Subscription}
 
@@ -27,11 +28,16 @@ export class Realtime {
                     // Initilizes an observable of changes related to db and table
                     this.enrollRoom(connRequest);
                     
-                    // TODO: verify this connectionRequest is valid and auth
-                    // TODO: verify table exists, if not, create it
-                    
-                    // Join current socket to room
-                    socket.join(connRequest.db);
+                    // Verify the connection is authorized
+                    db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb})
+                        // TODO: verify this connectionRequest is valid and auth in db.auth
+                        .flatMap(conn => db.auth(conn, connRequest.api_key))
+                        .subscribe(isAuth => {
+                            // Join current socket to room
+                            isAuth ? 
+                                socket.join(connRequest.db) : 
+                                socket.emit('err', 'Unathorized to db ' + connRequest.db)
+                        });
                     
                 } catch (e) {
                     console.error(e);
@@ -61,7 +67,7 @@ export class Realtime {
 
             observer = {
                 id: hashid,
-                subs: db.connectDB({host: 'localhost', port: 28015, db: query.db})
+                subs: db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
                     .flatMap(conn => db.changes(conn, query.table))                    
                     .subscribe(changes => {
                         // Deliver changes to room <db> with subject <table>

@@ -19,6 +19,13 @@ function connectDB(dbconfig) {
     });
 }
 exports.connectDB = connectDB;
+function auth(conn, api_key) {
+    return new Observable_1.Observable(function (o) {
+        o.next(true);
+        o.complete();
+    });
+}
+exports.auth = auth;
 function insert(conn, table, object) {
     return new Observable_1.Observable(function (o) {
         var query = r.table(table).insert(object);

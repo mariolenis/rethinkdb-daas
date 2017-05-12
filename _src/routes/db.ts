@@ -30,6 +30,16 @@ export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connectio
 }
 //</editor-fold>
 
+//<editor-fold defaultstate="collapsed" desc="auth(dbconfig: r.Connection, api_key: string): Observable<boolean>">
+export function auth(conn: r.Connection, api_key: string): Observable<boolean> {
+    return new Observable((o: Observer<boolean>) => {        
+        // Verify api_key
+        o.next(true);
+        o.complete();
+    });
+}
+//</editor-fold>
+
 /**
  * insert()
  * @description Inserts on db
