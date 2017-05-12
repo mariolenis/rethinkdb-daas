@@ -30,10 +30,18 @@ export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connectio
 }
 //</editor-fold>
 
+/**
+ * auth()
+ * @description Validates api_key
+ * @param conn: r.Connection
+ * @param api_key: string 
+ * @returns Obsersable true | false
+ */
 //<editor-fold defaultstate="collapsed" desc="auth(dbconfig: r.Connection, api_key: string): Observable<boolean>">
 export function auth(conn: r.Connection, api_key: string): Observable<boolean> {
     return new Observable((o: Observer<boolean>) => {        
         // Verify api_key
+        // TODO: verify this connectionRequest is valid and authorized
         o.next(true);
         o.complete();
     });

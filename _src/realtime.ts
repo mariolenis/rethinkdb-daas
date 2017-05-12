@@ -30,7 +30,6 @@ export class Realtime {
                     
                     // Verify the connection is authorized
                     db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb})
-                        // TODO: verify this connectionRequest is valid and auth in db.auth
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
                         .subscribe(isAuth => {
                             // Join current socket to room
@@ -52,7 +51,12 @@ export class Realtime {
         });
     }
     
-    enrollRoom(query: {db: string, table: string}) {
+    /**
+     * @description Function to create a Observable watcher of changes
+     * @param query: { db: string, table: string }
+     */
+    //<editor-fold defaultstate="collapsed" desc="enrollRoom(query: {db: string, table: string}) : void">
+    enrollRoom(query: {db: string, table: string}) : void {
         
         // Build a simple hash as id in 
         let hashid  = crypto.createHash('md5').update(query.db + query.table).digest('hex');
@@ -79,4 +83,5 @@ export class Realtime {
             this.watcher.push(observer);
         }
     }
+    //</editor-fold>
 }
