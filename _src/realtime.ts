@@ -37,21 +37,21 @@ export class Realtime {
     
     enrollRoom(query: {db: string, table: string}) {
         let hashid  = crypto.createHash('md5').update(query.db + query.table).digest('hex');
-            let nsp = _.find(this.nameSpaces, {id: hashid});
+        let nsp = _.find(this.nameSpaces, {id: hashid});
 
-            if (!nsp) {            
-                console.log('[realtime.enrollNameSpace] Enroll (' + query.db + ') for ' + query.table)
+        if (!nsp) {            
+            console.log('[realtime.enrollNameSpace] Enroll (' + query.db + ') for ' + query.table)
 
-                nsp = {
-                    id: hashid,
-                    subs: db.connectDB({host: 'localhost', port: 28015, db: query.db})
-                        .flatMap(conn => db.changes(conn, query.table))                    
-                        .subscribe(changes => {
-                            // Deliver changes to room <db> with subject <table>
-                            this.ioSocket.to(query.db).emit(query.table, JSON.stringify(changes));
-                        })
-                }
-                this.nameSpaces.push(nsp);
+            nsp = {
+                id: hashid,
+                subs: db.connectDB({host: 'localhost', port: 28015, db: query.db})
+                    .flatMap(conn => db.changes(conn, query.table))                    
+                    .subscribe(changes => {
+                        // Deliver changes to room <db> with subject <table>
+                        this.ioSocket.to(query.db).emit(query.table, JSON.stringify(changes));
+                    })
             }
+            this.nameSpaces.push(nsp);
+        }
     }
 }
