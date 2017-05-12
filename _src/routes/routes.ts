@@ -4,6 +4,8 @@ import * as db from './db';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/map';
 
+import {rethinkDBConfig} from './env.config';
+
 interface IQuery {
     db: string,
     table: string,
@@ -18,7 +20,7 @@ interface IQuery {
 export function putRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const query = req.body as IQuery;
     
-    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: query.db})
+    let dbSuscription = db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
         .flatMap(conn => db.insert(conn, query.table, query.object))
         .subscribe(
             response => {
@@ -38,7 +40,7 @@ export function updateRoute(req: express.Request, res: express.Response, next: e
 export function listRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const query = req.body as IQuery;
     
-    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: query.db})
+    let dbSuscription = db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
         .flatMap(conn => db.list(conn, query.table, parseInt(query.limit), query.filter))
         .subscribe(
             response => {

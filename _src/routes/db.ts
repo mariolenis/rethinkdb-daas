@@ -172,9 +172,14 @@ export function remove(conn: r.Connection, table: string, filter:{index: string,
 }
 //</editor-fold>
 
-/*
+/**
  * changes()
+ * @description Function that enables change detection on table
+ * @param r.Connection
+ * @param string table
+ * @returns Observable with changes
  */
+//<editor-fold defaultstate="collapsed" desc="changes(conn: r.Connection, table: string): Observable<{new_val: Object, old_val: Object}>">
 export function changes(conn: r.Connection, table: string): Observable<{new_val: Object, old_val: Object}> {
     return new Observable((o: Observer<Object>) => {
         const changes = r.table(table).changes();
@@ -187,3 +192,4 @@ export function changes(conn: r.Connection, table: string): Observable<{new_val:
         });
     })
 }
+//</editor-fold>
