@@ -8,6 +8,7 @@ import 'rxjs/add/operator/map';
 import {rethinkDBConfig} from './env.config';
 
 interface IQuery {
+    api_key: string,
     db: string,
     table: string,
     object?: Object,
@@ -22,6 +23,7 @@ export function listRoute(req: express.Request, res: express.Response, next: exp
     const query = req.body as IQuery;
     
     let dbSuscription = db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
+        .flatMap(conn => db.auth(conn, query.api_key))
         .flatMap(conn => db.list(conn, query.table, parseInt(query.limit), query.filter))
         .subscribe(
             response => {
@@ -38,6 +40,7 @@ export function putRoute(req: express.Request, res: express.Response, next: expr
     const query = req.body as IQuery;
     
     let dbSuscription = db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
+        .flatMap(conn => db.auth(conn, query.api_key))
         .flatMap(conn => db.insert(conn, query.table, query.object))
         .subscribe(
             response => {

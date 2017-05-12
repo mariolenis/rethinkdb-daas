@@ -13,15 +13,12 @@ var Realtime = (function () {
             socket.on('join', function (conn) {
                 try {
                     var connRequest_1 = JSON.parse(conn);
-                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest_1.db);
+                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest_1.db + ' with API_KEY ' + connRequest_1.api_key);
                     _this.enrollRoom(connRequest_1);
                     db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb })
                         .flatMap(function (conn) { return db.auth(conn, connRequest_1.api_key); })
-                        .subscribe(function (isAuth) {
-                        isAuth ?
-                            socket.join(connRequest_1.db) :
-                            socket.emit('err', 'Unathorized to db ' + connRequest_1.db);
-                    });
+                        .map(function (conn) { return conn.open; })
+                        .subscribe(function () { return socket.join(connRequest_1.db); }, function (err) { return socket.emit('err', 'Unathorized to db ' + connRequest_1.db + " " + err); });
                 }
                 catch (e) {
                     console.error(e);

@@ -7,6 +7,7 @@ var env_config_1 = require("./env.config");
 function listRoute(req, res, next) {
     var query = req.body;
     var dbSuscription = db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
+        .flatMap(function (conn) { return db.auth(conn, query.api_key); })
         .flatMap(function (conn) { return db.list(conn, query.table, parseInt(query.limit), query.filter); })
         .subscribe(function (response) {
         res.status(200).json(response);
@@ -18,6 +19,7 @@ exports.listRoute = listRoute;
 function putRoute(req, res, next) {
     var query = req.body;
     var dbSuscription = db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
+        .flatMap(function (conn) { return db.auth(conn, query.api_key); })
         .flatMap(function (conn) { return db.insert(conn, query.table, query.object); })
         .subscribe(function (response) {
         res.status(200).json(response);

@@ -21,7 +21,10 @@ function connectDB(dbconfig) {
 exports.connectDB = connectDB;
 function auth(conn, api_key) {
     return new Observable_1.Observable(function (o) {
-        o.next(true);
+        if (!!api_key)
+            o.next(conn);
+        else
+            o.error('api_key is not authorized');
         o.complete();
     });
 }

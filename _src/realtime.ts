@@ -23,7 +23,7 @@ export class Realtime {
                     // Parse incoming message
                     let connRequest = JSON.parse(conn) as {db: string, table: string, api_key: string};
                     
-                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest.db);
+                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
                     
                     // Initilizes an observable of changes related to db and table
                     this.enrollRoom(connRequest);
@@ -31,12 +31,11 @@ export class Realtime {
                     // Verify the connection is authorized
                     db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb})
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
-                        .subscribe(isAuth => {
-                            // Join current socket to room
-                            isAuth ? 
-                                socket.join(connRequest.db) : 
-                                socket.emit('err', 'Unathorized to db ' + connRequest.db)
-                        });
+                        .map(conn => conn.open)
+                        .subscribe(
+                            () => socket.join(connRequest.db),
+                            err => socket.emit('err', 'Unathorized to db ' + connRequest.db + " " + err)
+                        );
                     
                 } catch (e) {
                     console.error(e);

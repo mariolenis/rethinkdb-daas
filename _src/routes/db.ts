@@ -38,11 +38,14 @@ export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connectio
  * @returns Obsersable true | false
  */
 //<editor-fold defaultstate="collapsed" desc="auth(dbconfig: r.Connection, api_key: string): Observable<boolean>">
-export function auth(conn: r.Connection, api_key: string): Observable<boolean> {
-    return new Observable((o: Observer<boolean>) => {        
+export function auth(conn: r.Connection, api_key: string): Observable<r.Connection> {
+    return new Observable((o: Observer<r.Connection>) => {        
         // Verify api_key
         // TODO: verify this connectionRequest is valid and authorized
-        o.next(true);
+        if (!!api_key)
+            o.next(conn);
+        else
+            o.error('api_key is not authorized')
         o.complete();
     });
 }
