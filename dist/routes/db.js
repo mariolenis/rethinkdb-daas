@@ -110,7 +110,12 @@ function changes(conn, table) {
     return new Observable_1.Observable(function (o) {
         var changes = r.table(table).changes();
         changes.run(conn, function (err, cursor) {
-            cursor.each(function (err, row) { return o.next(row); });
+            try {
+                cursor.each(function (err, row) { return o.next(row); });
+            }
+            catch (e) {
+                console.log('[db.changes]' + e);
+            }
         });
     });
 }

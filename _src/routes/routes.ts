@@ -1,11 +1,11 @@
 import * as express from 'express';
 import * as db from './db';
-import * as socketio from 'socket.io'
 
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/map';
 
 interface IQuery {
+    db: string,
     table: string,
     object?: Object,
     limit?: string,
@@ -17,9 +17,8 @@ interface IQuery {
 
 export function putRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const query = req.body as IQuery;
-    const dbName = req.header('db');
     
-    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: dbName})
+    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: query.db})
         .flatMap(conn => db.insert(conn, query.table, query.object))
         .subscribe(
             response => {
@@ -38,9 +37,8 @@ export function updateRoute(req: express.Request, res: express.Response, next: e
 
 export function listRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const query = req.body as IQuery;
-    const dbName = req.header('db');
     
-    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: dbName})
+    let dbSuscription = db.connectDB({host: 'localhost', port: 28015, db: query.db})
         .flatMap(conn => db.list(conn, query.table, parseInt(query.limit), query.filter))
         .subscribe(
             response => {

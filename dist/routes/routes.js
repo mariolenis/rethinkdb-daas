@@ -4,8 +4,7 @@ require("rxjs/add/operator/mergeMap");
 require("rxjs/add/operator/map");
 function putRoute(req, res, next) {
     var query = req.body;
-    var dbName = req.header('db');
-    var dbSuscription = db.connectDB({ host: 'localhost', port: 28015, db: dbName })
+    var dbSuscription = db.connectDB({ host: 'localhost', port: 28015, db: query.db })
         .flatMap(function (conn) { return db.insert(conn, query.table, query.object); })
         .subscribe(function (response) {
         res.status(200).json(response);
@@ -19,8 +18,7 @@ function updateRoute(req, res, next) {
 exports.updateRoute = updateRoute;
 function listRoute(req, res, next) {
     var query = req.body;
-    var dbName = req.header('db');
-    var dbSuscription = db.connectDB({ host: 'localhost', port: 28015, db: dbName })
+    var dbSuscription = db.connectDB({ host: 'localhost', port: 28015, db: query.db })
         .flatMap(function (conn) { return db.list(conn, query.table, parseInt(query.limit), query.filter); })
         .subscribe(function (response) {
         res.status(200).json(response);
