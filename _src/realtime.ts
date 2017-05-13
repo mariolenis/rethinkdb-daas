@@ -17,9 +17,9 @@ export class Realtime {
             console.log('Client Connected ' + socket.id)
             
             // Joining to room according to table
-            socket.on('join', (conn: string) => {
+            socket.on('join', (conn: string, responseFn: (response: string) => void) => {
                 try {
-                    
+
                     // Parse incoming message
                     let connRequest = JSON.parse(conn) as {db: string, table: string, api_key: string};
                     
@@ -33,13 +33,16 @@ export class Realtime {
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
                         .map(conn => conn.open)
                         .subscribe(
-                            () => socket.join(connRequest.db),
-                            err => socket.emit('err', 'Unathorized to db ' + connRequest.db + " " + err)
+                            () => {
+                                socket.join(connRequest.db);
+                                responseFn('ok');
+                            },
+                            () => responseFn('err')
                         );
                     
                 } catch (e) {
                     console.error(e);
-                    socket.emit('err', e);
+                    responseFn('err: ' + JSON.stringify(e));
                 } 
             });
             
