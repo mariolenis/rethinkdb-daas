@@ -19,14 +19,13 @@ export class Server {
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
         
-        let sslOptions: {key: Buffer, cert: Buffer} = {
-            key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
-            cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
-        }
-        
         let port = 443;
         let server: http.Server | https.Server;
         try {
+            let sslOptions: {key: Buffer, cert: Buffer} = {
+                key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
+            }
             server = https.createServer(sslOptions, this.app);
         } catch (e) {
             port = 3200;

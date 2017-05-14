@@ -15,13 +15,13 @@ var Server = (function () {
         this.app.use(debug('dev'));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
-        var sslOptions = {
-            key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
-            cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
-        };
         var port = 443;
         var server;
         try {
+            var sslOptions = {
+                key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
+            };
             server = https.createServer(sslOptions, this.app);
         }
         catch (e) {
