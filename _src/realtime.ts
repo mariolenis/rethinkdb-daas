@@ -7,11 +7,11 @@ import { rethinkDBConfig } from './routes/env.config';
 interface IObservableWatcher {id: string, subs: Subscription}
 
 export class Realtime {
-    private watcher: IObservableWatcher[];
+    
+    // Collection in memory
+    private watcher: IObservableWatcher[] = [];
     
     constructor(private ioSocket: SocketIO.Server) {
-        
-        this.watcher = [];        
         
         this.ioSocket.on('connection', (socket: SocketIO.Socket) => {
             console.log('Client Connected ' + socket.id)
