@@ -1,7 +1,10 @@
 import * as express from 'express';
 import * as http from 'http';
+import * as https from 'https';
 import * as debug from 'morgan';
 import * as bodyParser from 'body-parser';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as io from 'socket.io';
 import * as fn from './routes/routes';
 import { Realtime } from './realtime';
@@ -16,8 +19,21 @@ export class Server {
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
         
-        let httpServer = http.createServer(this.app);        
-        new Realtime(io(httpServer));
+        let sslOptions: {key: Buffer, cert: Buffer} = {
+            key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
+            cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
+        }
+        
+        let port = 443;
+        let server: http.Server | https.Server;
+        try {
+            server = https.createServer(sslOptions, this.app);
+        } catch (e) {
+            port = 3200;
+            server = http.createServer(this.app);
+        }
+        
+        new Realtime(io(server));
         
         //<editor-fold defaultstate="collapsed" desc="Access-Control">
         this.app.use((req, res, next) => {
@@ -49,7 +65,7 @@ export class Server {
             res.status(200).send('Rethink Daas - API Ready!');
         });
         
-        httpServer.listen(3200);
+        server.listen(port);
     }
 }
 

@@ -10,7 +10,7 @@ var Realtime = (function () {
         this.watcher = [];
         this.ioSocket.on('connection', function (socket) {
             console.log('Client Connected ' + socket.id);
-            socket.on('join', function (conn) {
+            socket.on('join', function (conn, responseFn) {
                 try {
                     var connRequest_1 = JSON.parse(conn);
                     console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest_1.db + ' with API_KEY ' + connRequest_1.api_key);
@@ -18,11 +18,14 @@ var Realtime = (function () {
                     db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb })
                         .flatMap(function (conn) { return db.auth(conn, connRequest_1.api_key); })
                         .map(function (conn) { return conn.open; })
-                        .subscribe(function () { return socket.join(connRequest_1.db); }, function (err) { return socket.emit('err', 'Unathorized to db ' + connRequest_1.db + " " + err); });
+                        .subscribe(function () {
+                        socket.join(connRequest_1.db);
+                        responseFn('ok');
+                    }, function () { return responseFn('err'); });
                 }
                 catch (e) {
                     console.error(e);
-                    socket.emit('err', e);
+                    responseFn('err: ' + JSON.stringify(e));
                 }
             });
             socket.on('disconnect', function () {
