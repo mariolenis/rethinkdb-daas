@@ -69,9 +69,9 @@ function list(conn, table, query) {
     });
 }
 exports.list = list;
-function update(conn, table, index, object) {
+function update(conn, table, object) {
     return new Observable_1.Observable(function (o) {
-        var query = r.table(table).getAll(index.value, { index: index.index }).update(object);
+        var query = r.table(table).get(object.id).update(object);
         query.run(conn, function (err, result) {
             if (err)
                 o.error({ message: 'Operation could not be completed ' + err });

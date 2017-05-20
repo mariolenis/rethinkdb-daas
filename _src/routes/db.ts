@@ -13,7 +13,7 @@ export interface IRethinkQuery {
 /**
  * connectDB()
  * @description opens connection
- * @param dbconfig: r.ConnectionOptions
+ * @param <r.ConnectionOptions> dbconfig
  */
 //<editor-fold defaultstate="collapsed" desc="connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection>">
 export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection> {
@@ -41,9 +41,9 @@ export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connectio
 /**
  * auth()
  * @description Validates api_key
- * @param conn: r.Connection
- * @param api_key: string 
- * @returns Obsersable true | false
+ * @param <r.Connection> conn
+ * @param <string> api_key 
+ * @returns <Obsersable> true | false
  */
 //<editor-fold defaultstate="collapsed" desc="auth(dbconfig: r.Connection, api_key: string): Observable<boolean>">
 export function auth(conn: r.Connection, api_key: string): Observable<r.Connection> {
@@ -62,9 +62,9 @@ export function auth(conn: r.Connection, api_key: string): Observable<r.Connecti
 /**
  * insert()
  * @description Inserts on db
- * @param conn: r.Conneciton
- * @param table: string
- * @param object: Object
+ * @param <r.Conneciton> conn
+ * @param <string> table
+ * @param <Object> Object
  */
 //<editor-fold defaultstate="collapsed" desc="insertOnDB(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 export function insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {    
@@ -125,15 +125,16 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
 /**
  * update()
  * @description 
- * @param conn: r.Connection
- * @param table: string
- * @param index: {index: string, value: string}
+ * @param <r.Connection> conn
+ * @param <string> table
+ * @param <index: string, value: string> index
+ * @param <Object> object
  */
 //<editor-fold defaultstate="collapsed" desc="update(conn: r.Connection, table: string, index: {index: string, value: string}, object: Object): Observable<r.WriteResult>">
-export function update(conn: r.Connection, table: string, index: {index: string, value: string}, object: Object): Observable<r.WriteResult> {
+export function update(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {
     return new Observable((o: Observer<r.WriteResult>) => {
         
-        const query = r.table(table).getAll(index.value, {index: index.index}).update(object);
+        const query = r.table(table).get((object as {id: string}).id).update(object);
         query.run(conn, (err, result) => {
             if (err)
                 o.error({message: 'Operation could not be completed ' + err})
@@ -148,9 +149,9 @@ export function update(conn: r.Connection, table: string, index: {index: string,
 /**
  * remove()
  * @description Function that removes an element from db
- * @param conn: r.Conneciton
- * @param table: string
- * @param filter: {indexName : string, value: string}
+ * @param <r.Conneciton> conn
+ * @param <string> table
+ * @param <indexName : string, value: string> filter
  */
 //<editor-fold defaultstate="collapsed" desc="remove(conn: r.Connection, table: string, filter:{index: string, value: string}): Observable<r.WriteResult>">
 export function remove(conn: r.Connection, table: string, filter: {index: string, value: string}): Observable<r.WriteResult> {
@@ -170,9 +171,9 @@ export function remove(conn: r.Connection, table: string, filter: {index: string
 /**
  * changes()
  * @description Function that enables change detection on table
- * @param r.Connection
- * @param string table
- * @returns Observable with changes
+ * @param <r.Connection>
+ * @param <string> table
+ * @returns <Observable> with changes
  */
 //<editor-fold defaultstate="collapsed" desc="changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}>">
 export function changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}> {

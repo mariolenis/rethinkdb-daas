@@ -1,5 +1,4 @@
 import * as db from './routes/db';
-import * as crypto from 'crypto';
 import { Subscription } from 'rxjs/Subscription';
 import { rethinkDBConfig } from './routes/env.config';
 
@@ -10,6 +9,11 @@ export class Realtime {
     // Collection in memory
     private watcher: IObservableWatcher[] = [];
     
+    /**
+     * @constructor creates the connection to the socket.io server
+     * @param <Socket.Server> ioSocket
+     */
+    //<editor-fold defaultstate="collapsed" desc="constructor(private ioSocket: SocketIO.Server)">
     constructor(private ioSocket: SocketIO.Server) {
         
         this.ioSocket.on('connection', (socket: SocketIO.Socket) => {
@@ -51,10 +55,12 @@ export class Realtime {
             });
         });
     }
+    //</editor-fold>
     
     /**
      * @description Function to create a Observable watcher of changes
-     * @param query: { db: string, table: string }
+     * @param <db: string, table: string> query
+     * @param <string> room which matches socket.id
      */
     //<editor-fold defaultstate="collapsed" desc="enrollRoom(query: {db: string, table: string}) : void">
     private enrollChangeListener(queryString: string, room: string) : void {
@@ -87,6 +93,12 @@ export class Realtime {
     }
     //</editor-fold>
     
+    /**
+     * @description Subscribe to a changes
+     * @param <db: string, table: string, query: db.IRethinkQuery> query
+     * @param <string> room which matches socket.id
+     */
+    //<editor-fold defaultstate="collapsed" desc="private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription">
     private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription {
         return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
             .flatMap(conn => db.changes(conn, query))                    
@@ -95,4 +107,5 @@ export class Realtime {
                 this.ioSocket.to(room).emit(query.table, JSON.stringify(changes));
             })
     }
+    //</editor-fold>
 }
