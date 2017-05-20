@@ -42,16 +42,18 @@ function insert(conn, table, object) {
     });
 }
 exports.insert = insert;
-function list(conn, table, limit, index) {
+function list(conn, table, query) {
     return new Observable_1.Observable(function (o) {
-        var query;
-        if (!index)
-            query = r.table(table);
-        else
-            query = r.table(table).getAll(index.value, { index: index.index });
-        if (limit)
-            query = query.limit(limit);
-        query.run(conn, function (err, cursor) {
+        var rQuery = r.table(table);
+        if (!!query) {
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
+            if (!!query.orderBy)
+                rQuery = rQuery.orderBy(query.orderBy);
+            if (!!query.limit)
+                rQuery = rQuery.limit(query.limit);
+        }
+        rQuery.run(conn, function (err, cursor) {
             if (err)
                 o.error({ message: 'Error retriving info ' + err });
             else {
@@ -67,29 +69,6 @@ function list(conn, table, limit, index) {
     });
 }
 exports.list = list;
-function filter(conn, table, reducer, limit) {
-    return new Observable_1.Observable(function (o) {
-        var query = r.table(table).filter(function (doc) {
-            return doc(reducer.index).indexOf(reducer.value);
-        });
-        if (limit)
-            query = query.limit(limit);
-        query.run(conn, function (err, cursor) {
-            if (err)
-                o.error({ message: 'Error retriving info ' + err });
-            else {
-                cursor.toArray(function (err, result) {
-                    if (err)
-                        o.error({ message: 'Err ' + err });
-                    else
-                        o.next(result);
-                    o.complete();
-                });
-            }
-        });
-    });
-}
-exports.filter = filter;
 function update(conn, table, index, object) {
     return new Observable_1.Observable(function (o) {
         var query = r.table(table).getAll(index.value, { index: index.index }).update(object);
@@ -116,10 +95,20 @@ function remove(conn, table, filter) {
     });
 }
 exports.remove = remove;
-function changes(conn, table) {
+function changes(conn, data) {
     return new Observable_1.Observable(function (o) {
-        var changes = r.table(table).changes();
-        changes.run(conn, function (err, cursor) {
+        var rQuery = r.table(data.table);
+        if (!!data.query) {
+            if (!!data.query.filter)
+                rQuery = rQuery.filter(data.query.filter);
+            if (!!data.query.orderBy)
+                rQuery = rQuery.orderBy(data.query.orderBy);
+            if (!!data.query.limit)
+                rQuery = rQuery.limit(data.query.limit);
+        }
+        rQuery
+            .changes()
+            .run(conn, function (err, cursor) {
             try {
                 cursor.each(function (err, row) { return o.next(row); });
             }

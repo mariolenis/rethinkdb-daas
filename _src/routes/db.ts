@@ -2,6 +2,14 @@ import * as r from 'rethinkdb';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 
+//<editor-fold defaultstate="collapsed" desc="IRethinkQuery">
+export interface IRethinkQuery {
+    orderBy?: string | string[], 
+    limit?: number, 
+    filter: Object
+}
+//</editor-fold>
+
 /**
  * connectDB()
  * @description opens connection
@@ -77,25 +85,27 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
 /**
  * list()
  * @description find 
- * @param conn: r.Conneciton
- * @param table: string
- * @param limit: number
- * @param reducer: {indexName : string, value: string}
+ * @param <r.Conneciton> conn
+ * @param <string> table
+ * @param <IRethinkQuery> query
  */
-//<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: string} ): Observable<Object[]>">
-export function list(conn: r.Connection, table: string, limit?: number, index?: {index: string, value: any} ): Observable<Object[]> {
+//<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, query: IRethinkQuery): Observable<Object[]>">
+export function list(conn: r.Connection, table: string, query: IRethinkQuery): Observable<Object[]> {
     return new Observable((o: Observer<Object[]>) => {
         
-        let query: r.Table | r.Sequence;        
-        if (!index)
-            query = r.table(table);
-        else
-            query = r.table(table).getAll(index.value, {index: index.index});
-        
-        if (limit)
-            query = query.limit(limit);
-            
-        query.run(conn, (err, cursor) => {
+        let rQuery: r.Table | r.Sequence = r.table(table);  
+        if (!!query) {
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
+
+            if (!!query.orderBy)
+                rQuery = rQuery.orderBy(query.orderBy);
+
+            if (!!query.limit)
+                rQuery = rQuery.limit(query.limit);
+        }      
+                    
+        rQuery.run(conn, (err, cursor) => {
             if (err)
                 o.error({message: 'Error retriving info ' + err});
             else {
@@ -109,42 +119,6 @@ export function list(conn: r.Connection, table: string, limit?: number, index?: 
             }
         })
     });    
-}
-//</editor-fold>
-
-/**
- * filter()
- * @description Filters field by indexOf
- * @param conn: r.Conneciton
- * @param table: string
- * @param reducer: {indexName : string, value: string}
- * @param limit: number
- */
-//<editor-fold defaultstate="collapsed" desc="filter(conn: r.Connection, table: string, reducer: {index: string, value: string}, limit?: number): Observable<Object[]>">
-export function filter(conn: r.Connection, table: string, reducer: {index: string, value: string}, limit?: number): Observable<Object[]> {
-    return new Observable((o: Observer<Object[]>) => {
-        
-        let query = r.table(table).filter((doc: (index: string) => string) => {            
-            return doc(reducer.index).indexOf(reducer.value);
-        });
-        
-        if (limit)
-            query = query.limit(limit);
-            
-        query.run(conn, (err, cursor) => {
-            if (err)
-                o.error({message: 'Error retriving info ' + err});
-            else {
-                cursor.toArray((err, result) => {
-                    if (err)
-                        o.error({message: 'Err ' + err});
-                    else
-                        o.next(result);
-                    o.complete();
-                })
-            }
-        });
-    });
 }
 //</editor-fold>
 
@@ -179,7 +153,7 @@ export function update(conn: r.Connection, table: string, index: {index: string,
  * @param filter: {indexName : string, value: string}
  */
 //<editor-fold defaultstate="collapsed" desc="remove(conn: r.Connection, table: string, filter:{index: string, value: string}): Observable<r.WriteResult>">
-export function remove(conn: r.Connection, table: string, filter:{index: string, value: string}): Observable<r.WriteResult> {
+export function remove(conn: r.Connection, table: string, filter: {index: string, value: string}): Observable<r.WriteResult> {
     return new Observable((o: Observer<r.WriteResult>) => {
         const query = r.table(table).getAll(filter.value, {index: filter.index}).delete();
         query.run(conn, (err, result) => {
@@ -200,17 +174,32 @@ export function remove(conn: r.Connection, table: string, filter:{index: string,
  * @param string table
  * @returns Observable with changes
  */
-//<editor-fold defaultstate="collapsed" desc="changes(conn: r.Connection, table: string): Observable<{new_val: Object, old_val: Object}>">
-export function changes(conn: r.Connection, table: string): Observable<{new_val: Object, old_val: Object}> {
+//<editor-fold defaultstate="collapsed" desc="changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}>">
+export function changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}> {
     return new Observable((o: Observer<Object>) => {
-        const changes = r.table(table).changes();
-        changes.run(conn, (err, cursor) => {
-            try {
-                cursor.each((err, row) => o.next(row))
-            } catch(e) {
-                console.log('[db.changes]' + e);
-            }
-        });
+        
+        // Set the table to query
+        let rQuery: r.Table | r.Sequence = r.table(data.table);
+        if (!!data.query) {
+            if (!!data.query.filter)
+                rQuery = rQuery.filter(data.query.filter);
+
+            if (!!data.query.orderBy)
+                rQuery = rQuery.orderBy(data.query.orderBy);
+
+            if (!!data.query.limit)
+                rQuery = rQuery.limit(data.query.limit);
+        }
+        
+        rQuery
+            .changes()
+            .run(conn, (err, cursor) => {
+                try {
+                    cursor.each((err, row) => o.next(row))
+                } catch(e) {
+                    console.log('[db.changes]' + e);
+                }
+            });
     })
 }
 //</editor-fold>

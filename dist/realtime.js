@@ -1,7 +1,5 @@
 "use strict";
-var _ = require("lodash");
 var db = require("./routes/db");
-var crypto = require("crypto");
 var env_config_1 = require("./routes/env.config");
 var Realtime = (function () {
     function Realtime(ioSocket) {
@@ -14,12 +12,11 @@ var Realtime = (function () {
                 try {
                     var connRequest_1 = JSON.parse(conn);
                     console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest_1.db + ' with API_KEY ' + connRequest_1.api_key);
-                    _this.enrollRoom(connRequest_1);
                     db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb })
                         .flatMap(function (conn) { return db.auth(conn, connRequest_1.api_key); })
                         .map(function (conn) { return conn.open; })
                         .subscribe(function () {
-                        socket.join(connRequest_1.db);
+                        socket.join(socket.id);
                         responseFn('ok');
                     }, function () { return responseFn('err'); });
                 }
@@ -28,27 +25,35 @@ var Realtime = (function () {
                     responseFn('err: ' + JSON.stringify(e));
                 }
             });
+            socket.on('listenChanges', function (message) { return _this.enrollChangeListener(message, socket.id); });
             socket.on('disconnect', function () {
                 console.log("Client Disconnected " + socket.id);
             });
         });
     }
-    Realtime.prototype.enrollRoom = function (query) {
-        var _this = this;
-        var hashid = crypto.createHash('md5').update(query.db + query.table).digest('hex');
-        var observer = _.find(this.watcher, { id: hashid });
+    Realtime.prototype.enrollChangeListener = function (queryString, room) {
+        var query = JSON.parse(queryString);
+        var observer = this.watcher.filter(function (w) { return w.id === room; }).pop();
         if (!observer) {
-            console.log('[realtime.enrollNameSpace] Enroll (' + query.db + ') for ' + query.table);
-            observer = {
-                id: hashid,
-                subs: db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
-                    .flatMap(function (conn) { return db.changes(conn, query.table); })
-                    .subscribe(function (changes) {
-                    _this.ioSocket.to(query.db).emit(query.table, JSON.stringify(changes));
-                })
-            };
-            this.watcher.push(observer);
+            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + query.table);
+            this.watcher.push({
+                id: room,
+                subs: this.changesSubscription(query, room)
+            });
         }
+        else {
+            console.log('[realtime.enrollNameSpace] Renewing (' + room + ') for ' + query.table);
+            observer.subs.unsubscribe();
+            observer.subs = this.changesSubscription(query, room);
+        }
+    };
+    Realtime.prototype.changesSubscription = function (query, room) {
+        var _this = this;
+        return db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
+            .flatMap(function (conn) { return db.changes(conn, query); })
+            .subscribe(function (changes) {
+            _this.ioSocket.to(room).emit(query.table, JSON.stringify(changes));
+        });
     };
     return Realtime;
 }());

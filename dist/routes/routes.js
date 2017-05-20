@@ -8,7 +8,7 @@ function listRoute(req, res, next) {
     var query = req.body;
     var dbSuscription = db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
         .flatMap(function (conn) { return db.auth(conn, query.api_key); })
-        .flatMap(function (conn) { return db.list(conn, query.table, parseInt(query.limit), query.filter); })
+        .flatMap(function (conn) { return db.list(conn, query.table, query.query); })
         .subscribe(function (response) {
         res.status(200).json(response);
         if (!dbSuscription.closed)

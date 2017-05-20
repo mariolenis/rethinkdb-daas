@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import * as db from './routes/db';
 import * as crypto from 'crypto';
 import { Subscription } from 'rxjs/Subscription';
@@ -25,16 +24,13 @@ export class Realtime {
                     
                     console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
                     
-                    // Initilizes an observable of changes related to db and table
-                    this.enrollRoom(connRequest);
-                    
                     // Verify the connection is authorized
                     db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb})
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
                         .map(conn => conn.open)
                         .subscribe(
                             () => {
-                                socket.join(connRequest.db);
+                                socket.join(socket.id);
                                 responseFn('ok');
                             },
                             () => responseFn('err')
@@ -45,6 +41,9 @@ export class Realtime {
                     responseFn('err: ' + JSON.stringify(e));
                 } 
             });
+            
+            // Enroll listen to changes according to query with an observable
+            socket.on('listenChanges', (message: string) => this.enrollChangeListener(message, socket.id));
             
             // Disconnect
             socket.on('disconnect', () => {
@@ -58,32 +57,42 @@ export class Realtime {
      * @param query: { db: string, table: string }
      */
     //<editor-fold defaultstate="collapsed" desc="enrollRoom(query: {db: string, table: string}) : void">
-    enrollRoom(query: {db: string, table: string}) : void {
+    private enrollChangeListener(queryString: string, room: string) : void {
         
-        // Build a simple hash as id in 
-        let hashid  = crypto.createHash('md5').update(query.db + query.table).digest('hex');
+        let query = JSON.parse(queryString) as {db: string, table: string, query: db.IRethinkQuery};
         
         // Find in array of memory the observable
-        let observer = _.find(this.watcher, {id: hashid});
-
-        // If exist, don't mind to create a new one, the subcriber will emit changes 
-        // to every socket joined in db
+        let observer = this.watcher.filter(w => w.id === room).pop();
+        
+        // If it does not exists, create a new watcher
         if (!observer) {
-            console.log('[realtime.enrollNameSpace] Enroll (' + query.db + ') for ' + query.table)
+            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + query.table)
 
-            observer = {
-                id: hashid,
-                subs: db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
-                    .flatMap(conn => db.changes(conn, query.table))                    
-                    .subscribe(changes => {
-                        // Deliver changes to room <db> with subject <table>
-                        this.ioSocket.to(query.db).emit(query.table, JSON.stringify(changes));
-                    })
-            }
+            // Create a new Subsciption of changes and then push new watcher
+            this.watcher.push({
+                id: room,
+                subs: this.changesSubscription(query, room)
+            });
+        }
+        // If exist, just update the subscription based on the new query
+        else {
+            console.log('[realtime.enrollNameSpace] Renewing (' + room + ') for ' + query.table)
             
-            // Push new watcher
-            this.watcher.push(observer);
+            // unsubscribe the current listener of changes
+            observer.subs.unsubscribe();
+            
+            // Create a new one based on the query
+            observer.subs = this.changesSubscription(query, room)
         }
     }
     //</editor-fold>
+    
+    private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription {
+        return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
+            .flatMap(conn => db.changes(conn, query))                    
+            .subscribe(changes => {
+                // Deliver changes to room <socket.id> with subject <table>
+                this.ioSocket.to(room).emit(query.table, JSON.stringify(changes));
+            })
+    }
 }

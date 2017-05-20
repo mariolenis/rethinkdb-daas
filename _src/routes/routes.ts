@@ -12,11 +12,7 @@ interface IQuery {
     db: string,
     table: string,
     object?: Object,
-    limit?: string,
-    filter?: {
-        index: string,
-        value: any
-    }
+    query?: db.IRethinkQuery
 }
 
 export function listRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
@@ -24,7 +20,7 @@ export function listRoute(req: express.Request, res: express.Response, next: exp
     
     let dbSuscription = db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
         .flatMap(conn => db.auth(conn, query.api_key))
-        .flatMap(conn => db.list(conn, query.table, parseInt(query.limit), query.filter))
+        .flatMap(conn => db.list(conn, query.table, query.query))
         .subscribe(
             response => {
                 res.status(200).json(response);
