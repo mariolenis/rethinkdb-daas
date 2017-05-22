@@ -31,6 +31,13 @@ export class Realtime {
                     // Verify the connection is authorized
                     db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb})
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
+                        .map(conn => conn.close())
+                        
+                        // Reconnect to the authorized db
+                        .flatMap(() => db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: connRequest.db}))
+                        
+                        // Verify if it exists, if not, create a new one
+                        .flatMap(conn => db.tableVerify(conn, connRequest.db, connRequest.table))                      
                         .map(conn => conn.open)
                         .subscribe(
                             () => {

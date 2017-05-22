@@ -14,6 +14,9 @@ var Realtime = (function () {
                     console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest_1.db + ' with API_KEY ' + connRequest_1.api_key);
                     db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb })
                         .flatMap(function (conn) { return db.auth(conn, connRequest_1.api_key); })
+                        .map(function (conn) { return conn.close(); })
+                        .flatMap(function () { return db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: connRequest_1.db }); })
+                        .flatMap(function (conn) { return db.tableVerify(conn, connRequest_1.db, connRequest_1.table); })
                         .map(function (conn) { return conn.open; })
                         .subscribe(function () {
                         socket.join(socket.id);

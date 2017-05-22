@@ -60,6 +60,37 @@ export function auth(conn: r.Connection, api_key: string): Observable<r.Connecti
 //</editor-fold>
 
 /**
+ * tableVerify()
+ * @description Validates if table exists, if not, creates a new one
+ * @param <r.Connection> conn
+ * @param <string> db
+ * @param <string> table
+ * @returns <Observable<r.Connection>>
+ */
+//<editor-fold defaultstate="collapsed" desc="tableVerify(conn: r.Connection, db: string, table: string): Observable<r.Connection>">
+export function tableVerify(conn: r.Connection, db: string, table: string): Observable<r.Connection> {
+    return new Observable((o: Observer<r.Connection>) => {
+        r.table(table).isEmpty().run(conn, (err, result) => {
+            if (!!err) {
+                // Create the table
+                r.db(db).tableCreate(table).run(conn, (err, result) => {
+                    if (!err)
+                        o.next(conn);
+                    else
+                        o.error(err);
+                    o.complete();
+                });
+            }
+            else {
+                o.next(conn);
+                o.complete();
+            }
+        })
+    });
+}
+//</editor-fold>
+
+/**
  * insert()
  * @description Inserts on db
  * @param <r.Conneciton> conn

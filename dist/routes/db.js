@@ -29,6 +29,26 @@ function auth(conn, api_key) {
     });
 }
 exports.auth = auth;
+function tableVerify(conn, db, table) {
+    return new Observable_1.Observable(function (o) {
+        r.table(table).isEmpty().run(conn, function (err, result) {
+            if (!!err) {
+                r.db(db).tableCreate(table).run(conn, function (err, result) {
+                    if (!err)
+                        o.next(conn);
+                    else
+                        o.error(err);
+                    o.complete();
+                });
+            }
+            else {
+                o.next(conn);
+                o.complete();
+            }
+        });
+    });
+}
+exports.tableVerify = tableVerify;
 function insert(conn, table, object) {
     return new Observable_1.Observable(function (o) {
         var query = r.table(table).insert(object);
