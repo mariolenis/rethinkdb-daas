@@ -89,10 +89,25 @@ function list(conn, table, query) {
     });
 }
 exports.list = list;
-function update(conn, table, object) {
+function update(conn, table, object, query) {
     return new Observable_1.Observable(function (o) {
-        var query = r.table(table).get(object.id).update(object);
-        query.run(conn, function (err, result) {
+        var rQuery;
+        if (!query && !!object && !!object.id && object.id !== '')
+            rQuery = r.table(table).get(object.id);
+        else if (!!object && !!query) {
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
+            if (!!query.orderBy)
+                rQuery = rQuery.orderBy(query.orderBy);
+            if (!!query.limit)
+                rQuery = rQuery.limit(query.limit);
+        }
+        else {
+            o.error({ message: 'Object does not includes and ID' });
+            o.complete();
+            return;
+        }
+        rQuery.update(object).run(conn, function (err, result) {
             if (err)
                 o.error({ message: 'Operation could not be completed ' + err });
             else

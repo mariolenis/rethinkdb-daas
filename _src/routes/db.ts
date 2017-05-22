@@ -158,21 +158,42 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
  * @description 
  * @param <r.Connection> conn
  * @param <string> table
- * @param <index: string, value: string> index
- * @param <Object> object
+ * @param <{id: string, ...}> object
+ * @param <IRethinkQuery> query
  */
-//<editor-fold defaultstate="collapsed" desc="update(conn: r.Connection, table: string, index: {index: string, value: string}, object: Object): Observable<r.WriteResult>">
-export function update(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {
+//<editor-fold defaultstate="collapsed" desc="update(conn: r.Connection, table: string, object: {id: string}): Observable<r.WriteResult>">
+export function update(conn: r.Connection, table: string, object: {id: string}, query: IRethinkQuery): Observable<r.WriteResult> {
     return new Observable((o: Observer<r.WriteResult>) => {
         
-        const query = r.table(table).get((object as {id: string}).id).update(object);
-        query.run(conn, (err, result) => {
+        let rQuery: r.Sequence;
+            
+        if (!query && !!object && !!object.id && object.id !== '')
+            rQuery = r.table(table).get(object.id);
+            
+        else if (!!object && !!query) {
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
+
+            if (!!query.orderBy)
+                rQuery = rQuery.orderBy(query.orderBy);
+
+            if (!!query.limit)
+                rQuery = rQuery.limit(query.limit);
+        } 
+        else {
+            o.error({message: 'Object does not includes and ID'})
+            o.complete();
+            return;
+        }
+
+        rQuery.update(object).run(conn, (err, result) => {
             if (err)
                 o.error({message: 'Operation could not be completed ' + err})
             else
                 o.next(result)
             o.complete();
-        })
+        });
+        
     });
 }
 //</editor-fold>
