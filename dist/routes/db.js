@@ -104,7 +104,7 @@ function update(conn, table, object, query) {
         }
         else {
             if (!query)
-                o.error({ message: 'Object does not includes and ID' });
+                o.error({ message: 'Object does not include and ID' });
             else
                 o.error({ message: 'Object can not be null or undefined' });
             o.complete();
