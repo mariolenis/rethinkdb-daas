@@ -103,7 +103,10 @@ function update(conn, table, object, query) {
                 rQuery = rQuery.limit(query.limit);
         }
         else {
-            o.error({ message: 'Object does not includes and ID' });
+            if (!query)
+                o.error({ message: 'Object does not includes and ID' });
+            else
+                o.error({ message: 'Object can not be null or undefined' });
             o.complete();
             return;
         }

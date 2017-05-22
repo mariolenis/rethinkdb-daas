@@ -181,7 +181,10 @@ export function update(conn: r.Connection, table: string, object: {id: string}, 
                 rQuery = rQuery.limit(query.limit);
         } 
         else {
-            o.error({message: 'Object does not includes and ID'})
+            if (!query)
+                o.error({message: 'Object does not includes and ID'});
+            else
+                o.error({message: 'Object can not be null or undefined'});
             o.complete();
             return;
         }
