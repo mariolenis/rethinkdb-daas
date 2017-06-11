@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var express = require("express");
 var http = require("http");
 var https = require("https");
@@ -44,7 +45,9 @@ var Server = (function () {
         this.app.get('/api', function (req, res) {
             res.status(200).send('Rethink Daas - API Ready!');
         });
-        server.listen(port);
+        server.listen(port, function () {
+            console.log('Listening on port ' + port);
+        });
     }
     return Server;
 }());

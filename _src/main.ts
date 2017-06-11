@@ -64,7 +64,9 @@ export class Server {
             res.status(200).send('Rethink Daas - API Ready!');
         });
         
-        server.listen(port);
+        server.listen(port, () => {
+            console.log('Listening on port ' + port);
+        });
     }
 }
 
