@@ -37,10 +37,13 @@ export class Realtime {
                         .flatMap(() => db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: connRequest.db}))
                         
                         // Verify if it exists, if not, create a new one
-                        .flatMap(conn => db.tableVerify(conn, connRequest.db, connRequest.table))                      
+                        .flatMap(conn => db.tableVerify(conn, connRequest.db, connRequest.table))
+                        
+                        // Subscribe
                         .map(conn => conn.open)
                         .subscribe(
                             () => {
+                                // Ready to listen
                                 socket.join(socket.id);
                                 responseFn('ok');
                             },
@@ -107,12 +110,13 @@ export class Realtime {
      */
     //<editor-fold defaultstate="collapsed" desc="private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription">
     private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription {
+        
         return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
-            .flatMap(conn => db.changes(conn, query))                    
-            .subscribe(changes => {
-                // Deliver changes to room <socket.id> with subject <table>
-                this.ioSocket.to(room).emit(query.table, JSON.stringify(changes));
-            })
+            // Start the changes listener
+            .flatMap(conn => db.changes(conn, query))
+            
+            // Deliver changes to room <socket.id> with subject <table>
+            .subscribe(changes => this.ioSocket.to(room).emit(query.table, JSON.stringify(changes)))
     }
     //</editor-fold>
 }

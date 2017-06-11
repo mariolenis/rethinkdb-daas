@@ -54,9 +54,7 @@ var Realtime = (function () {
         var _this = this;
         return db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
             .flatMap(function (conn) { return db.changes(conn, query); })
-            .subscribe(function (changes) {
-            _this.ioSocket.to(room).emit(query.table, JSON.stringify(changes));
-        });
+            .subscribe(function (changes) { return _this.ioSocket.to(room).emit(query.table, JSON.stringify(changes)); });
     };
     return Realtime;
 }());
