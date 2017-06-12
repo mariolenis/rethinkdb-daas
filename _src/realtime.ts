@@ -62,6 +62,13 @@ export class Realtime {
             // Disconnect
             socket.on('disconnect', () => {
                 console.log("Client Disconnected " + socket.id);
+                // Find in array of memory the observable
+                let indexObserver = this.watcher.findIndex(w => w.id === socket.id);
+                if (indexObserver > -1) {
+                    console.log('Cleaning watcher ' + socket.id);
+                    this.watcher[indexObserver].subs.unsubscribe();
+                    this.watcher.splice(indexObserver);
+                }
             });
         });
     }
@@ -78,11 +85,11 @@ export class Realtime {
         let query = JSON.parse(queryString) as {db: string, table: string, query: db.IRethinkQuery};
         
         // Find in array of memory the observable
-        let observer = this.watcher.filter(w => w.id === room).pop();
+        let observer = this.watcher.find(w => w.id === room);
         
         // If it does not exists, create a new watcher
         if (!observer) {
-            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + query.table)
+            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + JSON.stringify(query))
 
             // Create a new Subsciption of changes and then push new watcher
             this.watcher.push({
@@ -116,7 +123,10 @@ export class Realtime {
             .flatMap(conn => db.changes(conn, query))
             
             // Deliver changes to room <socket.id> with subject <table>
-            .subscribe(changes => this.ioSocket.to(room).emit(query.table, JSON.stringify(changes)))
+            .subscribe(changes => {
+                console.log('Emitting changes to ' + room);
+                this.ioSocket.to(room).emit(query.table, JSON.stringify(changes))
+            })
     }
     //</editor-fold>
 }
