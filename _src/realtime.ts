@@ -58,7 +58,7 @@ export class Realtime {
             // Disconnect
             socket.on('disconnect', () => {
                 console.log("Client Disconnected " + socket.id);
-                // Find in array of memory the observable
+                // Find watcher in array of memory, unsubscribe from listening to changes and remove item
                 let indexObserver = this.watcher.findIndex(w => w.id === socket.id);
                 if (indexObserver > -1) {
                     console.log('Cleaning watcher ' + socket.id);
