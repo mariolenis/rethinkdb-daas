@@ -32,7 +32,7 @@ class Realtime {
                 if (indexObserver > -1) {
                     console.log('Cleaning watcher ' + socket.id);
                     this.watcher[indexObserver].subs.unsubscribe();
-                    this.watcher.splice(indexObserver);
+                    this.watcher.splice(indexObserver, 1);
                 }
             });
         });
@@ -41,11 +41,11 @@ class Realtime {
         let query = JSON.parse(queryString);
         let observer = this.watcher.find(w => w.id === room);
         if (!observer) {
-            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + JSON.stringify(query));
             this.watcher.push({
                 id: room,
                 subs: this.changesSubscription(query, room)
             });
+            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + JSON.stringify(query) + " " + this.watcher.length);
         }
         else {
             console.log('[realtime.enrollNameSpace] Renewing (' + room + ') for ' + query.table);
@@ -57,7 +57,7 @@ class Realtime {
         return db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
             .flatMap(conn => db.changes(conn, query))
             .subscribe(changes => {
-            console.log('Emitting changes to ' + room);
+            console.log('Emitting changes to ' + room + ' ' + JSON.stringify(query));
             this.ioSocket.to(room)
                 .emit(query.table, JSON.stringify(changes));
         });

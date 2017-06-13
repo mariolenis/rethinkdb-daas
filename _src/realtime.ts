@@ -63,7 +63,7 @@ export class Realtime {
                 if (indexObserver > -1) {
                     console.log('Cleaning watcher ' + socket.id);
                     this.watcher[indexObserver].subs.unsubscribe();
-                    this.watcher.splice(indexObserver);
+                    this.watcher.splice(indexObserver, 1);
                 }
             });
         });
@@ -85,13 +85,14 @@ export class Realtime {
         
         // If it does not exists, create a new watcher
         if (!observer) {
-            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + JSON.stringify(query))
-
+            
             // Create a new Subsciption of changes and then push new watcher
             this.watcher.push({
                 id: room,
                 subs: this.changesSubscription(query, room)
             });
+            
+            console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + JSON.stringify(query) + " " + this.watcher.length)
         }
         // If exist, just update the subscription based on the new query
         else {
@@ -120,7 +121,7 @@ export class Realtime {
             
             // Deliver changes to room <socket.id> with subject <table>
             .subscribe(changes => {
-                console.log('Emitting changes to ' + room);
+                console.log('Emitting changes to ' + room + ' ' + JSON.stringify(query));
                 // By default every socket on connection joins to a room with the .id
                 this.ioSocket.to(room)
                     .emit(query.table, JSON.stringify(changes))
