@@ -20,13 +20,13 @@ export class Realtime {
             console.log('Client Connected ' + socket.id)
             
             // Joining to room according to table
-            socket.on('join', (conn: string, responseFn: (response: string) => void) => {
+            socket.on('validate', (conn: string, response: (response: string) => void) => {
                 try {
 
                     // Parse incoming message
                     let connRequest = JSON.parse(conn) as {db: string, table: string, api_key: string};
                     
-                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
+                    console.log('[realtime.constructor] Validating ' + socket.id + ' to connect to ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
                     
                     // Verify the connection is authorized
                     db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb})
@@ -42,17 +42,13 @@ export class Realtime {
                         // Subscribe
                         .map(conn => conn.open)
                         .subscribe(
-                            () => {
-                                // Ready to listen
-                                socket.join(socket.id);
-                                responseFn('ok');
-                            },
-                            () => responseFn('err')
+                            () => response('ok'),
+                            () => response('err')
                         );
                     
                 } catch (e) {
                     console.error(e);
-                    responseFn('err: ' + JSON.stringify(e));
+                    response('err: ' + JSON.stringify(e));
                 } 
             });
             
@@ -125,7 +121,9 @@ export class Realtime {
             // Deliver changes to room <socket.id> with subject <table>
             .subscribe(changes => {
                 console.log('Emitting changes to ' + room);
-                this.ioSocket.to(room).emit(query.table, JSON.stringify(changes))
+                // By default every socket on connection joins to a room with the .id
+                this.ioSocket.to(room)
+                    .emit(query.table, JSON.stringify(changes))
             })
     }
     //</editor-fold>
