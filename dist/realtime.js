@@ -8,24 +8,21 @@ class Realtime {
         this.watcher = [];
         this.ioSocket.on('connection', (socket) => {
             console.log('Client Connected ' + socket.id);
-            socket.on('join', (conn, responseFn) => {
+            socket.on('validate', (conn, response) => {
                 try {
                     let connRequest = JSON.parse(conn);
-                    console.log('[realtime.constructor] Connecting ' + socket.id + ' to room ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
+                    console.log('[realtime.constructor] Validating ' + socket.id + ' to connect to ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
                     db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb })
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
                         .map(conn => conn.close())
                         .flatMap(() => db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: connRequest.db }))
                         .flatMap(conn => db.tableVerify(conn, connRequest.db, connRequest.table))
                         .map(conn => conn.open)
-                        .subscribe(() => {
-                        socket.join(socket.id);
-                        responseFn('ok');
-                    }, () => responseFn('err'));
+                        .subscribe(() => response('ok'), () => response('err'));
                 }
                 catch (e) {
                     console.error(e);
-                    responseFn('err: ' + JSON.stringify(e));
+                    response('err: ' + JSON.stringify(e));
                 }
             });
             socket.on('listenChanges', (message) => this.enrollChangeListener(message, socket.id));
@@ -61,7 +58,8 @@ class Realtime {
             .flatMap(conn => db.changes(conn, query))
             .subscribe(changes => {
             console.log('Emitting changes to ' + room);
-            this.ioSocket.to(room).emit(query.table, JSON.stringify(changes));
+            this.ioSocket.to(room)
+                .emit(query.table, JSON.stringify(changes));
         });
     }
 }

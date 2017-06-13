@@ -1,25 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var express = require("express");
-var http = require("http");
-var https = require("https");
-var debug = require("morgan");
-var bodyParser = require("body-parser");
-var fs = require("fs");
-var path = require("path");
-var io = require("socket.io");
-var fn = require("./routes/routes");
-var realtime_1 = require("./realtime");
-var Server = (function () {
-    function Server() {
+const express = require("express");
+const http = require("http");
+const https = require("https");
+const debug = require("morgan");
+const bodyParser = require("body-parser");
+const fs = require("fs");
+const path = require("path");
+const io = require("socket.io");
+const fn = require("./routes/routes");
+const realtime_1 = require("./realtime");
+class Server {
+    constructor() {
         this.app = express();
         this.app.use(debug('dev'));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
-        var port = 443;
-        var server;
+        let port = 443;
+        let server;
         try {
-            var sslOptions = {
+            let sslOptions = {
                 key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
                 cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
             };
@@ -30,7 +30,7 @@ var Server = (function () {
             server = http.createServer(this.app);
         }
         new realtime_1.Realtime(io(server));
-        this.app.use(function (req, res, next) {
+        this.app.use((req, res, next) => {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
             res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,authorization');
@@ -42,15 +42,14 @@ var Server = (function () {
         this.app.post('/api/update', fn.updateRoute.bind(fn.updateRoute));
         this.app.post('/api/filter', fn.filterRoute.bind(fn.filterRoute));
         this.app.post('/api/delete', fn.deleteRoute.bind(fn.deleteRoute));
-        this.app.get('/api', function (req, res) {
+        this.app.get('/api', (req, res) => {
             res.status(200).send('Rethink Daas - API Ready!');
         });
-        server.listen(port, function () {
+        server.listen(port, () => {
             console.log('Listening on port ' + port);
         });
     }
-    return Server;
-}());
+}
 exports.Server = Server;
 new Server();
 //# sourceMappingURL=main.js.map
