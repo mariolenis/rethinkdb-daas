@@ -141,18 +141,22 @@ function changes(conn, data) {
             if (!!data.query.filter)
                 rQuery = rQuery.filter(data.query.filter);
             if (!!data.query.orderBy)
-                rQuery = rQuery.orderBy(data.query.orderBy);
-            if (!!data.query.limit)
+                rQuery = rQuery.orderBy({ index: data.query.orderBy });
+            if (!!data.query.limit && !!data.query.orderBy)
                 rQuery = rQuery.limit(data.query.limit);
         }
         rQuery
             .changes()
             .run(conn, (err, cursor) => {
-            try {
-                cursor.each((err, row) => o.next(row));
-            }
-            catch (e) {
-                console.log('[db.changes]' + e);
+            if (err)
+                console.log('[db.changes]' + err);
+            else {
+                try {
+                    cursor.each((err, row) => o.next(row));
+                }
+                catch (e) {
+                    console.log('[db.changes]' + e);
+                }
             }
         });
     });

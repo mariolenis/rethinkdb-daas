@@ -4,7 +4,7 @@ import { Observer } from 'rxjs/Observer';
 
 //<editor-fold defaultstate="collapsed" desc="IRethinkQuery">
 export interface IRethinkQuery {
-    orderBy?: string | string[], 
+    orderBy?: string, 
     limit?: number, 
     filter: Object
 }
@@ -241,19 +241,23 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
                 rQuery = rQuery.filter(data.query.filter);
 
             if (!!data.query.orderBy)
-                rQuery = rQuery.orderBy(data.query.orderBy);
+                rQuery = rQuery.orderBy({ index: data.query.orderBy });
 
-            if (!!data.query.limit)
+            if (!!data.query.limit && !!data.query.orderBy)
                 rQuery = rQuery.limit(data.query.limit);
         }
         
         rQuery
             .changes()
             .run(conn, (err, cursor) => {
-                try {
-                    cursor.each((err, row) => o.next(row))
-                } catch(e) {
-                    console.log('[db.changes]' + e);
+                if (err)
+                    console.log('[db.changes]' + err);
+                else {
+                    try {
+                        cursor.each((err, row) => o.next(row))
+                    } catch(e) {
+                        console.log('[db.changes]' + e);
+                    }
                 }
             });
     })
