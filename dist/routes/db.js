@@ -70,7 +70,7 @@ function list(conn, table, query) {
             if (!!query.filter)
                 rQuery = rQuery.filter(query.filter);
             if (!!query.orderBy)
-                rQuery = rQuery.orderBy(query.orderBy);
+                rQuery = rQuery.orderBy(!!query.orderBy.desc ? r.desc(query.orderBy.index) : query.orderBy.index);
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
         }
@@ -141,7 +141,7 @@ function changes(conn, data) {
             if (!!data.query.filter)
                 rQuery = rQuery.filter(data.query.filter);
             if (!!data.query.orderBy)
-                rQuery = rQuery.orderBy({ index: data.query.orderBy });
+                rQuery = rQuery.orderBy({ index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
             if (!!data.query.limit && !!data.query.orderBy)
                 rQuery = rQuery.limit(data.query.limit);
         }

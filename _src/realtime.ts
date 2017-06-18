@@ -116,6 +116,7 @@ export class Realtime {
     private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription {
         
         return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
+        
             // Start the changes listener
             .flatMap(conn => db.changes(conn, query))
             

@@ -4,7 +4,10 @@ import { Observer } from 'rxjs/Observer';
 
 //<editor-fold defaultstate="collapsed" desc="IRethinkQuery">
 export interface IRethinkQuery {
-    orderBy?: string, 
+    orderBy?: {
+        index: string,
+        desc?: boolean
+    }, 
     limit?: number, 
     filter: Object
 }
@@ -130,7 +133,7 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
                 rQuery = rQuery.filter(query.filter);
 
             if (!!query.orderBy)
-                rQuery = rQuery.orderBy(query.orderBy);
+                rQuery = rQuery.orderBy(!!query.orderBy.desc ? r.desc(query.orderBy.index) : query.orderBy.index);
 
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
@@ -239,9 +242,9 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
         if (!!data.query) {
             if (!!data.query.filter)
                 rQuery = rQuery.filter(data.query.filter);
-
+            
             if (!!data.query.orderBy)
-                rQuery = rQuery.orderBy({ index: data.query.orderBy });
+                rQuery = rQuery.orderBy({index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
 
             if (!!data.query.limit && !!data.query.orderBy)
                 rQuery = rQuery.limit(data.query.limit);
