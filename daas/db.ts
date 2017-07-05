@@ -100,7 +100,7 @@ export function tableVerify(conn: r.Connection, db: string, table: string): Obse
  * @param <string> table
  * @param <Object> Object
  */
-//<editor-fold defaultstate="collapsed" desc="insertOnDB(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
+//<editor-fold defaultstate="collapsed" desc="insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 export function insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {    
     return new Observable((o: Observer<r.WriteResult>) => {
         

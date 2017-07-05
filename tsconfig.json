@@ -5,7 +5,7 @@
         "module": "commonjs",
         "sourceMap": true,
         "outDir": "dist",  
-        "rootDir": "_src/",        
+        "rootDirs": ["_src/*/*", "daas/*"],
         "removeComments": true,
         "moduleResolution": "node",
         "noImplicitAny": false
