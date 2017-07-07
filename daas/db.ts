@@ -117,6 +117,35 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
 //</editor-fold>
 
 /**
+ * @description Function to find by key
+ * @param <r.Connection>
+ * @param <string> table
+ * @param <string> key value
+ */
+//<editor-fold defaultstate="collapsed" desc="find(conn: r.Connection, table: string, value: string): Observable<Object>">
+export function find(conn: r.Connection, table: string, value: string): Observable<Object> {
+    return new Observable((o: Observer<Object[]>) => {
+        let query = r.table(table).get(value);
+        query.run(conn, (err, cursor) => {
+            if (err)
+                o.error({message: 'Error retrving value ' + value, err: err});
+            else {
+                cursor.each((err, result) => {
+                    if (err)
+                        o.error({message: 'Error at cursor value ' + value, err: err});
+                    else if (result === null)
+                        o.error({message: 'No valid key was found ' + value});
+                    else
+                        o.next(result);
+                    o.complete();
+                });
+            }
+        });
+    });
+}
+//</editor-fold>
+
+/**
  * list()
  * @description find 
  * @param <r.Conneciton> conn

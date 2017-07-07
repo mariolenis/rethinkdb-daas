@@ -63,6 +63,27 @@ function insert(conn, table, object) {
     });
 }
 exports.insert = insert;
+function find(conn, table, value) {
+    return new Observable_1.Observable((o) => {
+        let query = r.table(table).get(value);
+        query.run(conn, (err, cursor) => {
+            if (err)
+                o.error({ message: 'Error retrving value ' + value, err: err });
+            else {
+                cursor.each((err, result) => {
+                    if (err)
+                        o.error({ message: 'Error at cursor value ' + value, err: err });
+                    else if (result === null)
+                        o.error({ message: 'No valid key was found ' + value });
+                    else
+                        o.next(result);
+                    o.complete();
+                });
+            }
+        });
+    });
+}
+exports.find = find;
 function list(conn, table, query) {
     return new Observable_1.Observable((o) => {
         let rQuery = r.table(table);

@@ -26,14 +26,14 @@ class Realtime {
                 }
             });
             socket.on('listenChanges', (message) => this.enrollChangeListener(message, socket.id));
-            socket.on('disconnect', () => this.disconnectionHandler(socket));
+            socket.on('disconnect', () => this.disconnectionHandler(socket.id));
         });
     }
-    disconnectionHandler(socket) {
-        console.log("Client Disconnected " + socket.id);
-        let indexObserver = this.watcher.findIndex(w => w.id === socket.id);
+    disconnectionHandler(socketID) {
+        console.log("Client Disconnected " + socketID);
+        let indexObserver = this.watcher.findIndex(w => w.id === socketID);
         if (indexObserver > -1) {
-            console.log('Cleaning watcher ' + socket.id);
+            console.log('Cleaning watcher ' + socketID);
             this.watcher[indexObserver].subs.unsubscribe();
             this.watcher.splice(indexObserver, 1);
         }

@@ -56,7 +56,7 @@ export class Realtime {
             socket.on('listenChanges', (message: string) => this.enrollChangeListener(message, socket.id));
             
             // Disconnect
-            socket.on('disconnect', () => this.disconnectionHandler(socket));
+            socket.on('disconnect', () => this.disconnectionHandler(socket.id));
         });
     }
     //</editor-fold>
@@ -66,12 +66,12 @@ export class Realtime {
      * @param <Socket> socket 
      */
     //<editor-fold defaultstate="collapsed" desc="disconnectionHandler(socket: SocketIO.Socket): void">
-    private disconnectionHandler(socket: SocketIO.Socket): void {
-        console.log("Client Disconnected " + socket.id);
+    private disconnectionHandler(socketID: string): void {
+        console.log("Client Disconnected " + socketID);
         // Find watcher in array of memory, unsubscribe from listening to changes and remove item
-        let indexObserver = this.watcher.findIndex(w => w.id === socket.id);
+        let indexObserver = this.watcher.findIndex(w => w.id === socketID);
         if (indexObserver > -1) {
-            console.log('Cleaning watcher ' + socket.id);
+            console.log('Cleaning watcher ' + socketID);
             this.watcher[indexObserver].subs.unsubscribe();
             this.watcher.splice(indexObserver, 1);
         }
