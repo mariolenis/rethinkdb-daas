@@ -19,11 +19,11 @@ export interface IRethinkQuery {
  * @param <r.ConnectionOptions> dbconfig
  */
 //<editor-fold defaultstate="collapsed" desc="connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection>">
-export function connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection> {
+export function connectDB(dbconfig: r.ConnectionOptions, origen: string): Observable<r.Connection> {
     return new Observable((o: Observer<r.Connection>) => {        
         
         let connection: r.Connection;
-        
+        console.log(JSON.stringify(dbconfig), origen);
         r.connect(dbconfig, (err, conn) => {
             if (err)
                 o.error({message: 'Connection failed ' + err});
@@ -100,7 +100,7 @@ export function tableVerify(conn: r.Connection, db: string, table: string): Obse
  * @param <string> table
  * @param <Object> Object
  */
-//<editor-fold defaultstate="collapsed" desc="insertOnDB(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
+//<editor-fold defaultstate="collapsed" desc="insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 export function insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {    
     return new Observable((o: Observer<r.WriteResult>) => {
         
@@ -113,6 +113,35 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
             o.complete();
         });
     })
+}
+//</editor-fold>
+
+/**
+ * @description Function to find by key
+ * @param <r.Connection>
+ * @param <string> table
+ * @param <string> key value
+ */
+//<editor-fold defaultstate="collapsed" desc="find(conn: r.Connection, table: string, value: string): Observable<Object>">
+export function find(conn: r.Connection, table: string, value: string): Observable<Object> {
+    return new Observable((o: Observer<Object[]>) => {
+        let query = r.table(table).get(value);
+        query.run(conn, (err, cursor) => {
+            if (err)
+                o.error({message: 'Error retrving value ' + value, err: err});
+            else {
+                cursor.each((err, result) => {
+                    if (err)
+                        o.error({message: 'Error at cursor value ' + value, err: err});
+                    else if (result === null)
+                        o.error({message: 'No valid key was found ' + value});
+                    else
+                        o.next(result);
+                    o.complete();
+                });
+            }
+        });
+    });
 }
 //</editor-fold>
 
@@ -236,7 +265,7 @@ export function remove(conn: r.Connection, table: string, filter: {index: string
  */
 //<editor-fold defaultstate="collapsed" desc="changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}>">
 export function changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}> {
-    return new Observable((o: Observer<Object>) => {
+    return new Observable((o: Observer<{new_val: Object, old_val: Object}>) => {
         
         // Set the table to query
         let rQuery: r.Table | r.Sequence = r.table(data.table);

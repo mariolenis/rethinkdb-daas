@@ -12,7 +12,7 @@
   "contributors": [],
   "scripts": {
     "start": "node dist/main.js",
-    "_node:w": "nodemon --watch dist"
+    "_node:w": "nodemon dist/main.js"
   },
   "dependencies": {
     "body-parser": "^1.17.1",

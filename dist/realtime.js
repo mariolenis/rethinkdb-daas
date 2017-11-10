@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const db = require("./routes/db");
-const env_config_1 = require("./routes/env.config");
+const db = require("./daas/db");
+const env_config_1 = require("./env.config");
 class Realtime {
     constructor(ioSocket) {
         this.ioSocket = ioSocket;
@@ -12,10 +12,10 @@ class Realtime {
                 try {
                     let connRequest = JSON.parse(conn);
                     console.log('[realtime.constructor] Validating ' + socket.id + ' to connect to ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
-                    db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb })
+                    db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: env_config_1.rethinkDBConfig.authDb }, 'auth')
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
                         .map(conn => conn.close())
-                        .flatMap(() => db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: connRequest.db }))
+                        .flatMap(() => db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: connRequest.db }, 'table-veryf'))
                         .flatMap(conn => db.tableVerify(conn, connRequest.db, connRequest.table))
                         .map(conn => conn.open)
                         .subscribe(() => response('ok'), () => response('err'));
@@ -54,7 +54,7 @@ class Realtime {
         }
     }
     changesSubscription(query, room) {
-        return db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db })
+        return db.connectDB({ host: env_config_1.rethinkDBConfig.host, port: env_config_1.rethinkDBConfig.port, db: query.db }, 'realtime')
             .flatMap(conn => db.changes(conn, query))
             .subscribe(changes => {
             console.log('Emitting changes to ' + room + ' ' + JSON.stringify(query));

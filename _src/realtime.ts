@@ -1,6 +1,6 @@
-import * as db from './routes/db';
+import * as db from './daas/db';
 import { Subscription } from 'rxjs/Subscription';
-import { rethinkDBConfig } from './routes/env.config';
+import { rethinkDBConfig } from './env.config';
 
 interface IObservableWatcher {id: string, subs: Subscription}
 
@@ -13,7 +13,6 @@ export class Realtime {
      * @constructor creates the connection to the socket.io server
      * @param <Socket.Server> ioSocket
      */
-    //<editor-fold defaultstate="collapsed" desc="constructor(private ioSocket: SocketIO.Server)">
     constructor(private ioSocket: SocketIO.Server) {
         
         this.ioSocket.on('connection', (socket: SocketIO.Socket) => {
@@ -29,12 +28,12 @@ export class Realtime {
                     console.log('[realtime.constructor] Validating ' + socket.id + ' to connect to ' + connRequest.db + ' with API_KEY ' + connRequest.api_key);
                     
                     // Verify the connection is authorized
-                    db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb})
+                    db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb}, 'auth')
                         .flatMap(conn => db.auth(conn, connRequest.api_key))
                         .map(conn => conn.close())
                         
                         // Reconnect to the authorized db
-                        .flatMap(() => db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: connRequest.db}))
+                        .flatMap(() => db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: connRequest.db}, 'table-veryf'))
                         
                         // Verify if it exists, if not, create a new one
                         .flatMap(conn => db.tableVerify(conn, connRequest.db, connRequest.table))
@@ -68,14 +67,12 @@ export class Realtime {
             });
         });
     }
-    //</editor-fold>
     
     /**
      * @description Function to create a Observable watcher of changes
      * @param <db: string, table: string> query
      * @param <string> room which matches socket.id
      */
-    //<editor-fold defaultstate="collapsed" desc="enrollRoom(query: {db: string, table: string}) : void">
     private enrollChangeListener(queryString: string, room: string) : void {
         
         let query = JSON.parse(queryString) as {db: string, table: string, query: db.IRethinkQuery};
@@ -105,17 +102,15 @@ export class Realtime {
             observer.subs = this.changesSubscription(query, room)
         }
     }
-    //</editor-fold>
     
     /**
      * @description Subscribe to a changes
      * @param <db: string, table: string, query: db.IRethinkQuery> query
      * @param <string> room which matches socket.id
      */
-    //<editor-fold defaultstate="collapsed" desc="private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription">
     private changesSubscription(query: {db: string, table: string, query: db.IRethinkQuery}, room: string): Subscription {
         
-        return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db})
+        return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db}, 'realtime')
         
             // Start the changes listener
             .flatMap(conn => db.changes(conn, query))
@@ -128,5 +123,4 @@ export class Realtime {
                     .emit(query.table, JSON.stringify(changes))
             })
     }
-    //</editor-fold>
 }

@@ -2,9 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const r = require("rethinkdb");
 const Observable_1 = require("rxjs/Observable");
-function connectDB(dbconfig) {
+function connectDB(dbconfig, origen) {
     return new Observable_1.Observable((o) => {
         let connection;
+        console.log(JSON.stringify(dbconfig), origen);
         r.connect(dbconfig, (err, conn) => {
             if (err)
                 o.error({ message: 'Connection failed ' + err });

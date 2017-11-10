@@ -4,13 +4,13 @@
         "target": "es6",
         "module": "commonjs",
         "sourceMap": true,
-        "outDir": "dist",  
-        "rootDirs": ["_src/*/*", "daas/*"],
+        "outDir": "./dist/",  
+        "rootDir": "./_src/",
         "removeComments": true,
         "moduleResolution": "node",
         "noImplicitAny": false
     },
     "exclude": [
-        "node_modules"
+        "./node_modules"
     ]
 }

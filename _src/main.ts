@@ -6,8 +6,9 @@ import * as bodyParser from 'body-parser';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as io from 'socket.io';
-import * as fn from './routes/routes';
+import * as routerFn from './routes';
 import { Realtime } from './realtime';
+import { web_api } from './env.config';
 
 export class Server {
     
@@ -18,23 +19,7 @@ export class Server {
         this.app.use(debug('dev'));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
-        
-        let port = 443;
-        let server: http.Server | https.Server;
-        try {
-            let sslOptions: {key: Buffer, cert: Buffer} = {
-                key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
-                cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
-            }
-            server = https.createServer(sslOptions, this.app);
-        } catch (e) {
-            port = 3200;
-            server = http.createServer(this.app);
-        }
-        
-        new Realtime(io(server));
-        
-        //<editor-fold defaultstate="collapsed" desc="Access-Control">
+
         this.app.use((req, res, next) => {
             // Website you wish to allow to connect
             res.setHeader('Access-Control-Allow-Origin', '*');
@@ -52,21 +37,47 @@ export class Server {
             // Pass to next layer of middleware
             next();
         });
-        //</editor-fold>
         
-        this.app.post('/api/put',       fn.putRoute.bind(fn.putRoute));
-        this.app.post('/api/list',      fn.listRoute.bind(fn.listRoute));
-        this.app.post('/api/update',    fn.updateRoute.bind(fn.updateRoute));
-        this.app.post('/api/filter',    fn.filterRoute.bind(fn.filterRoute));
-        this.app.post('/api/delete',    fn.deleteRoute.bind(fn.deleteRoute));
+        this.app.post('/api/put',       routerFn.putRoute.bind(routerFn.putRoute));
+        this.app.post('/api/list',      routerFn.listRoute.bind(routerFn.listRoute));
+        this.app.post('/api/update',    routerFn.updateRoute.bind(routerFn.updateRoute));
+        this.app.post('/api/filter',    routerFn.filterRoute.bind(routerFn.filterRoute));
+        this.app.post('/api/delete',    routerFn.deleteRoute.bind(routerFn.deleteRoute));
         
         this.app.get('/api', (req, res: express.Response) => {
             res.status(200).send('Rethink Daas - API Ready!');
         });
         
-        server.listen(port, () => {
-            console.log('Listening on port ' + port);
-        });
+        let server: http.Server | https.Server;
+        try {
+
+            // start server with SSL support
+            let sslOptions: {key: Buffer, cert: Buffer} = {
+                key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
+            }
+
+            server = https.createServer(sslOptions, this.app);
+            server.listen(web_api.SSL_PORT, () => {
+                console.log('Listening on SSL port ' + web_api.SSL_PORT);
+            });
+
+            // Redirect web traffic to SSL 
+            http.createServer((req, res) => {
+                res.writeHead(301, {
+                    "Location" : "https://" + req.headers['host'] + req.url
+                });
+                res.end();
+            }).listen(web_api.PORT);
+
+        } catch (e) {
+            server = http.createServer(this.app);
+            server.listen(web_api.PORT, () => {
+                console.log('Listening on port ' + web_api.PORT);
+            });
+        }
+        
+        new Realtime(io(server));
     }
 }
 
