@@ -2,7 +2,6 @@ import * as r from 'rethinkdb';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 
-//<editor-fold defaultstate="collapsed" desc="IRethinkQuery">
 export interface IRethinkQuery {
     orderBy?: {
         index: string,
@@ -11,14 +10,19 @@ export interface IRethinkQuery {
     limit?: number, 
     filter: Object
 }
-//</editor-fold>
+
+export interface IRethinkDBAPIConfig {
+    api_key: string;
+    database: string;
+    host?: string;
+    port?: number;
+}
 
 /**
  * connectDB()
  * @description opens connection
  * @param <r.ConnectionOptions> dbconfig
  */
-//<editor-fold defaultstate="collapsed" desc="connectDB(dbconfig: r.ConnectionOptions): Observable<r.Connection>">
 export function connectDB(dbconfig: r.ConnectionOptions, origen: string): Observable<r.Connection> {
     return new Observable((o: Observer<r.Connection>) => {        
         
@@ -39,7 +43,6 @@ export function connectDB(dbconfig: r.ConnectionOptions, origen: string): Observ
         }
     });
 }
-//</editor-fold>
 
 /**
  * auth()
