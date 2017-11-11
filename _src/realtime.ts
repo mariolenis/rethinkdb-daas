@@ -122,11 +122,15 @@ export class Realtime {
             .flatMap(conn => db.changes(conn, {query: queryParams.query, table: queryParams.table}))
             
             // Deliver changes to room <socket.id> with subject <table>
-            .subscribe(changes => {
-                console.log('Emitting changes to ' + room + ' ' + JSON.stringify(queryParams));
-                // By default every socket on connection joins to a room with the .id
-                this.ioSocket.to(room)
-                    .emit(queryParams.table, JSON.stringify(changes))
-            })
+            .subscribe(
+                changes => {
+                    console.log('Emitting changes to ' + room + ' ' + JSON.stringify(queryParams));
+                    // By default every socket on connection joins to a room with the .id
+                    this.ioSocket.to(room)
+                        .emit(queryParams.table, JSON.stringify(changes))
+                },
+                err => this.ioSocket.to(room)
+                    .emit(queryParams.table, JSON.stringify({err: err}))
+            )
     }
 }

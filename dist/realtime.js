@@ -62,7 +62,8 @@ class Realtime {
             console.log('Emitting changes to ' + room + ' ' + JSON.stringify(queryParams));
             this.ioSocket.to(room)
                 .emit(queryParams.table, JSON.stringify(changes));
-        });
+        }, err => this.ioSocket.to(room)
+            .emit(queryParams.table, JSON.stringify({ err: err })));
     }
 }
 exports.Realtime = Realtime;

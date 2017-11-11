@@ -97,8 +97,9 @@ function list(conn, table, query) {
                 rQuery = rQuery.limit(query.limit);
         }
         rQuery.run(conn, (err, cursor) => {
-            if (err)
+            if (err) {
                 o.error({ message: 'Error retriving info ' + err });
+            }
             else {
                 cursor.toArray((err, result) => {
                     if (err)
@@ -171,7 +172,7 @@ function changes(conn, data) {
             .changes()
             .run(conn, (err, cursor) => {
             if (err)
-                console.log('[db.changes]' + err);
+                o.error(err);
             else {
                 try {
                     cursor.each((err, row) => o.next(row));

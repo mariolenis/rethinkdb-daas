@@ -172,9 +172,9 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
         }      
                     
         rQuery.run(conn, (err, cursor) => {
-            if (err)
+            if (err) {
                 o.error({message: 'Error retriving info ' + err});
-            else {
+            } else {
                 cursor.toArray((err, result) => {
                     if (err)
                         o.error({message: 'Err ' + err});
@@ -287,7 +287,7 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
             .changes()
             .run(conn, (err, cursor) => {
                 if (err)
-                    console.log('[db.changes]' + err);
+                    o.error(err);
                 else {
                     try {
                         cursor.each((err, row) => o.next(row))
