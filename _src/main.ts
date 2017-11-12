@@ -15,14 +15,19 @@ export class Server {
     app: express.Application = express();
     
     constructor() {
-        
+        const whiteList = ['localhost']
         this.app.use(debug('dev'));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
 
         this.app.use((req, res, next) => {
             // Website you wish to allow to connect
-            res.setHeader('Access-Control-Allow-Origin', '*');
+            whiteList.forEach(allowed => {
+                if (req.headers.origin.indexOf(allowed) > -1) {
+                    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+                    return;
+                }
+            })
 
             // Request methods you wish to allow
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
@@ -41,8 +46,9 @@ export class Server {
         this.app.post('/api/put',       routerFn.putRoute.bind(routerFn.putRoute));
         this.app.post('/api/list',      routerFn.listRoute.bind(routerFn.listRoute));
         this.app.post('/api/update',    routerFn.updateRoute.bind(routerFn.updateRoute));
-        this.app.post('/api/filter',    routerFn.filterRoute.bind(routerFn.filterRoute));
         this.app.post('/api/delete',    routerFn.deleteRoute.bind(routerFn.deleteRoute));
+        this.app.post('/api/authUser',  routerFn.authUser.bind(routerFn.authUser));
+        this.app.post('/api/isAuth',    routerFn.isAuthenticated.bind(routerFn.isAuthenticated));
         
         this.app.get('/api', (req, res: express.Response) => {
             res.status(200).send('Rethink Daas - API Ready!');

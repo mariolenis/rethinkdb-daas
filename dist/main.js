@@ -14,11 +14,17 @@ const env_config_1 = require("./env.config");
 class Server {
     constructor() {
         this.app = express();
+        const whiteList = ['localhost'];
         this.app.use(debug('dev'));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.use((req, res, next) => {
-            res.setHeader('Access-Control-Allow-Origin', '*');
+            whiteList.forEach(allowed => {
+                if (req.headers.origin.indexOf(allowed) > -1) {
+                    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+                    return;
+                }
+            });
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
             res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,authorization');
             res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -27,8 +33,9 @@ class Server {
         this.app.post('/api/put', routerFn.putRoute.bind(routerFn.putRoute));
         this.app.post('/api/list', routerFn.listRoute.bind(routerFn.listRoute));
         this.app.post('/api/update', routerFn.updateRoute.bind(routerFn.updateRoute));
-        this.app.post('/api/filter', routerFn.filterRoute.bind(routerFn.filterRoute));
         this.app.post('/api/delete', routerFn.deleteRoute.bind(routerFn.deleteRoute));
+        this.app.post('/api/authUser', routerFn.authUser.bind(routerFn.authUser));
+        this.app.post('/api/isAuth', routerFn.isAuthenticated.bind(routerFn.isAuthenticated));
         this.app.get('/api', (req, res) => {
             res.status(200).send('Rethink Daas - API Ready!');
         });

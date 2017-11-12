@@ -9,4 +9,5 @@ exports.web_api = {
     SSL_PORT: 443,
     PORT: 3100
 };
+exports.SECRET = "VividariumEtIntervigiliumEtViator";
 //# sourceMappingURL=env.config.js.map

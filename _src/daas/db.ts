@@ -14,6 +14,7 @@ export interface IRethinkQuery {
 export interface IRethinkDBAPIConfig {
     api_key: string;
     database: string;
+    auth_table?: string;
     host?: string;
     port?: number;
 }
