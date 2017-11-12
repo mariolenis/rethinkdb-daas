@@ -4,20 +4,25 @@ const r = require("rethinkdb");
 const Observable_1 = require("rxjs/Observable");
 function connectDB(dbconfig, origen) {
     return new Observable_1.Observable((o) => {
-        let connection;
-        console.log(JSON.stringify(dbconfig), origen);
-        r.connect(dbconfig, (err, conn) => {
-            if (err)
-                o.error({ message: 'Connection failed ' + err });
-            else {
-                connection = conn;
-                o.next(conn);
-            }
-        });
-        return () => {
-            if (!!connection && connection.open)
-                connection.close();
-        };
+        try {
+            let connection;
+            console.log(JSON.stringify(dbconfig), origen);
+            r.connect(dbconfig, (err, conn) => {
+                if (err)
+                    o.error({ message: 'Connection failed ' + err });
+                else {
+                    connection = conn;
+                    o.next(conn);
+                }
+            });
+            return () => {
+                if (!!connection && connection.open)
+                    connection.close();
+            };
+        }
+        catch (err) {
+            console.log(err);
+        }
     });
 }
 exports.connectDB = connectDB;
@@ -96,20 +101,26 @@ function list(conn, table, query) {
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
         }
-        rQuery.run(conn, (err, cursor) => {
-            if (err) {
-                o.error({ message: 'Error retriving info ' + err });
-            }
-            else {
-                cursor.toArray((err, result) => {
-                    if (err)
-                        o.error({ message: 'Err ' + err });
-                    else
-                        o.next(result);
-                    o.complete();
-                });
-            }
-        });
+        try {
+            rQuery.run(conn, (err, cursor) => {
+                if (err) {
+                    console.log(err);
+                    o.error({ message: 'Error retriving info ' + err });
+                }
+                else {
+                    cursor.toArray((err, result) => {
+                        if (err)
+                            o.error({ message: 'Err ' + err });
+                        else
+                            o.next(result);
+                        o.complete();
+                    });
+                }
+            });
+        }
+        catch (err) {
+            o.error({ message: 'Err ' + err });
+        }
     });
 }
 exports.list = list;

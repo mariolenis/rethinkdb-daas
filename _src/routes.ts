@@ -3,6 +3,7 @@ import * as db from './daas/db';
 import * as crypto from 'crypto';
 import {DBControl} from './daas/controller';
 import {rethinkDBConfig, SECRET} from './env.config';
+import { IRethinkDBAPIConfig } from './daas/db';
 
 import 'rxjs/add/operator/switchMap';
 import 'rxjs/add/operator/mergeMap';
@@ -10,7 +11,6 @@ import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
 
 import 'rxjs/add/observable/fromPromise';
-import { IRethinkDBAPIConfig } from './daas/db';
 
 interface IQuery {
     api_key: string,
@@ -89,18 +89,21 @@ export function authUser(req: express.Request, res: express.Response, next: expr
                 }
             }
         })
-        .subscribe((users: {password: string}[]) => {
-            if (users.length === 0)
-                res.status(400).json({err: 'User not found'})
-            else if (users.length > 0 && users[0].password !== user.password)
-                res.status(401).json({err: 'Password does not match'})
-            else {
-                const cipher = crypto.createCipher('aes-256-ctr', SECRET);
-                let cripted = cipher.update(JSON.stringify(users[0]), 'utf8', 'hex');
-                cripted += cipher.final('hex');
-                res.status(200).json({token: cripted});
-            }
-        });
+        .subscribe(
+            (users: {password: string}[]) => {
+                if (users.length === 0)
+                    res.status(400).json({err: 'User not found'})
+                else if (users.length > 0 && users[0].password !== user.password)
+                    res.status(401).json({err: 'Password does not match'})
+                else {
+                    const cipher = crypto.createCipher('aes-256-ctr', SECRET);
+                    let cripted = cipher.update(JSON.stringify(users[0]), 'utf8', 'hex');
+                    cripted += cipher.final('hex');
+                    res.status(200).json({token: cripted});
+                }
+            },
+            err => res.status(400).json({err: err})
+        );
 }
 
 export function isAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction): void {
@@ -123,12 +126,15 @@ export function isAuthenticated(req: express.Request, res: express.Response, nex
                     }
                 }
             })
-            .subscribe((users: {password: string}[]) => {
-                if (users.length === 0)
-                    res.status(401).json({err: 'User not authenticated'})            
-                else
-                    res.status(200).json({msj: 'User authenticated'});
-            });
+            .subscribe(
+                (users: {password: string}[]) => {
+                    if (users.length === 0)
+                        res.status(401).json({err: 'User not authenticated'})            
+                    else
+                        res.status(200).json({msj: 'User authenticated'});
+                },
+                err => res.status(400).json({err: err})
+            );
     } catch(err) {
         res.status(400).json({err: 'Token error'})
     }

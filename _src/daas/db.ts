@@ -26,21 +26,24 @@ export interface IRethinkDBAPIConfig {
  */
 export function connectDB(dbconfig: r.ConnectionOptions, origen: string): Observable<r.Connection> {
     return new Observable((o: Observer<r.Connection>) => {        
-        
-        let connection: r.Connection;
-        console.log(JSON.stringify(dbconfig), origen);
-        r.connect(dbconfig, (err, conn) => {
-            if (err)
-                o.error({message: 'Connection failed ' + err});
-            else {
-                connection = conn;
-                o.next(conn);
+        try {
+            let connection: r.Connection;
+            console.log(JSON.stringify(dbconfig), origen);
+            r.connect(dbconfig, (err, conn) => {
+                if (err)
+                    o.error({message: 'Connection failed ' + err});
+                else {
+                    connection = conn;
+                    o.next(conn);
+                }
+            });
+            
+            return () => {
+                if (!!connection && connection.open)
+                    connection.close();
             }
-        });
-        
-        return () => {
-            if (!!connection && connection.open)
-                connection.close();
+        } catch(err) {
+            console.log(err)
         }
     });
 }
@@ -171,20 +174,24 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
         }      
-                    
-        rQuery.run(conn, (err, cursor) => {
-            if (err) {
-                o.error({message: 'Error retriving info ' + err});
-            } else {
-                cursor.toArray((err, result) => {
-                    if (err)
-                        o.error({message: 'Err ' + err});
-                    else
-                        o.next(result);
-                    o.complete();
-                })
-            }
-        })
+        try {
+            rQuery.run(conn, (err, cursor) => {                
+                if (err) {
+                    console.log(err)
+                    o.error({message: 'Error retriving info ' + err});
+                } else {
+                    cursor.toArray((err, result) => {
+                        if (err)
+                            o.error({message: 'Err ' + err});
+                        else
+                            o.next(result);
+                        o.complete();
+                    })
+                }
+            })
+        } catch(err) {
+            o.error({message: 'Err ' + err});
+        } 
     });    
 }
 //</editor-fold>

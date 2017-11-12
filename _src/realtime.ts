@@ -66,9 +66,17 @@ export class Realtime {
             // emit to socket
             .map(result => {
                 console.log('[realtime.registerConnection] Emiting result of query to ' + socket.id);
-                // {init_data: T[]} 
+                
+                // clear the current state 
                 this.ioSocket.to(socket.id)
-                    .emit(queryParams.table, JSON.stringify({ init: result }));
+                    .emit(queryParams.table, JSON.stringify({}));
+                
+                // Send each value of results
+                result.forEach(new_val => {
+                    this.ioSocket.to(socket.id)
+                        .emit(queryParams.table, JSON.stringify({new_val: new_val}));
+                });
+                console.log('[realtime.registerConnection] Done!');
             })
             .subscribe(
                 ()  => responseFn(JSON.stringify({msj: 'SUCCESS'})),
