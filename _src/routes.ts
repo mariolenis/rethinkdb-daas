@@ -106,11 +106,11 @@ export function authUser(req: express.Request, res: express.Response, next: expr
 export function isAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const [config, token] = req.body as [IRethinkDBAPIConfig, string];
 
-    const decipher = crypto.createDecipher('aes-256-ctr', SECRET);
-    let decripted = decipher.update(token, 'hex', 'utf8');
-    decripted += decipher.final('utf8');
-
     try {
+        const decipher = crypto.createDecipher('aes-256-ctr', SECRET);
+        let decripted = decipher.update(token, 'hex', 'utf8');
+        decripted += decipher.final('utf8');
+        
         let userInToken = JSON.parse(decripted) as {id: string};
         // If user has been authenticated, his token must match with user in db
         let dbAuthSubscription = DBControl.list({
