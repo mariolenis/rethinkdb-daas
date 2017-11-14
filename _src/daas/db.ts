@@ -25,7 +25,7 @@ export interface IRethinkDBAPIConfig {
  * @param <r.ConnectionOptions> dbconfig
  */
 export function connectDB(dbconfig: r.ConnectionOptions, origen: string): Observable<r.Connection> {
-    return new Observable((o: Observer<r.Connection>) => {        
+    return new Observable((o: Observer<r.Connection>) => {
         try {
             let connection: r.Connection;
             console.log(JSON.stringify(dbconfig), origen);
@@ -55,7 +55,6 @@ export function connectDB(dbconfig: r.ConnectionOptions, origen: string): Observ
  * @param <string> api_key 
  * @returns <Obsersable> true | false
  */
-//<editor-fold defaultstate="collapsed" desc="auth(dbconfig: r.Connection, api_key: string): Observable<boolean>">
 export function auth(conn: r.Connection, api_key: string): Observable<r.Connection> {
     return new Observable((o: Observer<r.Connection>) => {        
         // Verify api_key
@@ -67,7 +66,6 @@ export function auth(conn: r.Connection, api_key: string): Observable<r.Connecti
         o.complete();
     });
 }
-//</editor-fold>
 
 /**
  * tableVerify()

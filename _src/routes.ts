@@ -100,7 +100,6 @@ export function createUser(req: express.Request, res: express.Response, next: ex
 
 export function authUser(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const [config, user] = req.body as [IRethinkDBAPIConfig, {user: string, password: string}];
-
     let dbAuthSubscription = DBControl.list({
             api_key: config.api_key,
             db: config.database,
@@ -114,20 +113,27 @@ export function authUser(req: express.Request, res: express.Response, next: expr
         .subscribe(
             (users: {password: string}[]) => {
                 if (users.length === 0)
-                    res.status(400).json({err: 'User not found'})
+                    res.status(400).json({err: 'User not found'});
                 else if (users.length > 0 && users[0].password !== user.password)
                     res.status(401).json({err: 'Password does not match'})
                 else {
-                    const cipher = crypto.createCipher('aes-256-ctr', SECRET);
-                    let cripted = cipher.update(JSON.stringify(users[0]), 'utf8', 'hex');
-                    cripted += cipher.final('hex');
-                    res.status(200).json({token: cripted});
+                    try {
+                        delete users[0].password;
+                        const content = [ req.headers, users[0] ];
+
+                        const hashPass = crypto.createHash('sha256').update(SECRET).digest();
+                        const cipher = crypto.createCipheriv('aes-256-ctr', hashPass, 'a2xhcgAAAAAAAAAA');
+                        let cripted = cipher.update(JSON.stringify(content), 'utf8', 'hex');
+                        cripted += cipher.final('hex');
+                        res.status(200).json({token: cripted});
+                    } catch (err) {
+                        console.log(err)
+                        res.status(400).json({err: err});
+                    }
                 }
 
-                if (!dbAuthSubscription.closed){
-                    console.log('cerrando conexión...')
+                if (!dbAuthSubscription.closed)
                     dbAuthSubscription.unsubscribe();
-                }
             },
             err => res.status(400).json({err: err})
         );
@@ -137,11 +143,12 @@ export function isAuthenticated(req: express.Request, res: express.Response, nex
     const [config, token] = req.body as [IRethinkDBAPIConfig, string];
 
     try {
-        const decipher = crypto.createDecipher('aes-256-ctr', SECRET);
+        const hashPass = crypto.createHash('sha256').update(SECRET).digest();
+        const decipher = crypto.createDecipheriv('aes-256-ctr', hashPass, 'a2xhcgAAAAAAAAAA');
         let decripted = decipher.update(token, 'hex', 'utf8');
         decripted += decipher.final('utf8');
-        
-        let userInToken = JSON.parse(decripted) as {id: string};
+
+        let [headers, userInToken] = JSON.parse(decripted) as [ Object, {id: string} ];
         // If user has been authenticated, his token must match with user in db
         let dbIsAuthSubscription = DBControl.list({
                 api_key: config.api_key,
@@ -157,8 +164,12 @@ export function isAuthenticated(req: express.Request, res: express.Response, nex
                 (users: {password: string}[]) => {
                     if (users.length === 0)
                         res.status(401).json({err: 'User not authenticated'})            
-                    else
-                        res.status(200).json({msj: 'User authenticated'});
+                    else {
+                        if (req.header('host') == headers['host'] && req.header('user-agent') == headers['user-agent'])
+                            res.status(200).json({msj: 'User authenticated'});
+                        else
+                            res.status(401).json({err: 'User authenticated elsewhere'})
+                    }
 
                     if (!dbIsAuthSubscription.closed)
                         dbIsAuthSubscription.unsubscribe();
@@ -166,6 +177,6 @@ export function isAuthenticated(req: express.Request, res: express.Response, nex
                 err => res.status(400).json({err: err})
             );
     } catch(err) {
-        res.status(400).json({err: 'Token error'})
+        res.status(400).json({err: 'Token error: ' + err});
     }
 }
