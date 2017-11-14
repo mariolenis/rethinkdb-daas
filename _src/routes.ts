@@ -76,6 +76,28 @@ export function deleteRoute(req: express.Request, res: express.Response, next: e
         );
 }
 
+export function createUser(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    const [config, user] = req.body as [IRethinkDBAPIConfig, {user: string, password: string}];
+
+    let dbCreateUserSubscription = DBControl.put({
+            api_key: config.api_key,
+            db: config.database,
+            table: config.auth_table,
+            object: user
+        })
+        .subscribe(
+            response => {
+                res.status(200).json(response);
+
+                // Implement extra functions to validate / Notify
+
+                if (!dbCreateUserSubscription.closed)
+                    dbCreateUserSubscription.unsubscribe();
+            },
+            err => res.status(400).json({err: err})
+        );
+}
+
 export function authUser(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const [config, user] = req.body as [IRethinkDBAPIConfig, {user: string, password: string}];
 
@@ -101,6 +123,11 @@ export function authUser(req: express.Request, res: express.Response, next: expr
                     cripted += cipher.final('hex');
                     res.status(200).json({token: cripted});
                 }
+
+                if (!dbAuthSubscription.closed){
+                    console.log('cerrando conexión...')
+                    dbAuthSubscription.unsubscribe();
+                }
             },
             err => res.status(400).json({err: err})
         );
@@ -116,7 +143,7 @@ export function isAuthenticated(req: express.Request, res: express.Response, nex
         
         let userInToken = JSON.parse(decripted) as {id: string};
         // If user has been authenticated, his token must match with user in db
-        let dbAuthSubscription = DBControl.list({
+        let dbIsAuthSubscription = DBControl.list({
                 api_key: config.api_key,
                 db: config.database,
                 table: config.auth_table,
@@ -132,6 +159,9 @@ export function isAuthenticated(req: express.Request, res: express.Response, nex
                         res.status(401).json({err: 'User not authenticated'})            
                     else
                         res.status(200).json({msj: 'User authenticated'});
+
+                    if (!dbIsAuthSubscription.closed)
+                        dbIsAuthSubscription.unsubscribe();
                 },
                 err => res.status(400).json({err: err})
             );

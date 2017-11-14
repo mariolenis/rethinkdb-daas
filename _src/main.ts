@@ -10,6 +10,8 @@ import * as routerFn from './routes';
 import { Realtime } from './realtime';
 import { web_api } from './env.config';
 
+import * as cmd from 'node-cmd';
+
 export class Server {
     
     app: express.Application = express();
@@ -47,6 +49,7 @@ export class Server {
         this.app.post('/api/list',      routerFn.listRoute.bind(routerFn.listRoute));
         this.app.post('/api/update',    routerFn.updateRoute.bind(routerFn.updateRoute));
         this.app.post('/api/delete',    routerFn.deleteRoute.bind(routerFn.deleteRoute));
+        this.app.post('/api/createUser',routerFn.createUser.bind(routerFn.createUser));
         this.app.post('/api/authUser',  routerFn.authUser.bind(routerFn.authUser));
         this.app.post('/api/isAuth',    routerFn.isAuthenticated.bind(routerFn.isAuthenticated));
         

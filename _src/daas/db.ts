@@ -177,7 +177,6 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
         try {
             rQuery.run(conn, (err, cursor) => {                
                 if (err) {
-                    console.log(err)
                     o.error({message: 'Error retriving info ' + err});
                 } else {
                     cursor.toArray((err, result) => {

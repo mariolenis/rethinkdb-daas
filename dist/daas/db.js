@@ -104,7 +104,6 @@ function list(conn, table, query) {
         try {
             rQuery.run(conn, (err, cursor) => {
                 if (err) {
-                    console.log(err);
                     o.error({ message: 'Error retriving info ' + err });
                 }
                 else {

@@ -26,7 +26,6 @@ export module DBControl {
     export function put(query: IQuery): Observable<WriteResult> {
         return validateAuth(query)
             .flatMap(() => db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: query.db}, 'control-put'))
-            //.flatMap(conn => db.auth(conn, query.api_key))
             .flatMap(conn => db.insert(conn, query.table, query.object));
     }
 
