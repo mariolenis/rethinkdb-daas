@@ -75,7 +75,6 @@ export function auth(conn: r.Connection, api_key: string): Observable<r.Connecti
  * @param <string> table
  * @returns <Observable<r.Connection>>
  */
-//<editor-fold defaultstate="collapsed" desc="tableVerify(conn: r.Connection, db: string, table: string): Observable<r.Connection>">
 export function tableVerify(conn: r.Connection, db: string, table: string): Observable<r.Connection> {
     return new Observable((o: Observer<r.Connection>) => {
         r.table(table).isEmpty().run(conn, (err, result) => {
@@ -96,7 +95,6 @@ export function tableVerify(conn: r.Connection, db: string, table: string): Obse
         })
     });
 }
-//</editor-fold>
 
 /**
  * insert()
@@ -105,7 +103,6 @@ export function tableVerify(conn: r.Connection, db: string, table: string): Obse
  * @param <string> table
  * @param <Object> Object
  */
-//<editor-fold defaultstate="collapsed" desc="insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult>">
 export function insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {    
     return new Observable((o: Observer<r.WriteResult>) => {
         
@@ -119,7 +116,6 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
         });
     })
 }
-//</editor-fold>
 
 /**
  * @description Function to find by key
