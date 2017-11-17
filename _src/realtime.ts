@@ -5,7 +5,6 @@ import * as io from 'socket.io';
 import { Subscription } from 'rxjs/Subscription';
 import { rethinkDBConfig } from './env.config';
 import { IRethinkDBAPIConfig, IRethinkQuery } from './daas/db';
-import { Observable } from 'rxjs/Observable';
 
 interface IObservableWatcher {id: string, subs: Subscription}
 
@@ -153,11 +152,11 @@ export class Realtime {
                 changes => {
                     console.log('Emitting changes to ' + room + ' ' + JSON.stringify(queryParams));
                     // By default every socket on connection joins to a room with the .id
-                    this.ioSocket
+                    this.ioSocket.to(room)
                         .emit(room, JSON.stringify(changes))
                 },
                 err => {
-                    this.ioSocket
+                    this.ioSocket.to(room)
                         .emit(room, JSON.stringify({err: err}))
                 }
             )
