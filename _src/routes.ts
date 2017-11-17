@@ -64,7 +64,7 @@ export function updateRoute(req: express.Request, res: express.Response, next: e
 
 export function deleteRoute(req: express.Request, res: express.Response, next: express.NextFunction): void {
     const query = req.body as IQuery;
-    
+
     let dbSuscription = DBControl.remove(query).subscribe(
             response => {
                 res.status(200).json(response);
