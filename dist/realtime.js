@@ -71,10 +71,10 @@ class Realtime {
             .flatMap(conn => db.changes(conn, { query: queryParams.query, table: queryParams.table }))
             .subscribe(changes => {
             console.log('Emitting changes to ' + room + ' ' + JSON.stringify(queryParams));
-            this.ioSocket
+            this.ioSocket.to(room)
                 .emit(room, JSON.stringify(changes));
         }, err => {
-            this.ioSocket
+            this.ioSocket.to(room)
                 .emit(room, JSON.stringify({ err: err }));
         });
     }
