@@ -197,7 +197,6 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
  * @param <{id: string, ...}> object
  * @param <IRethinkQuery> query
  */
-//<editor-fold defaultstate="collapsed" desc="update(conn: r.Connection, table: string, object: {id: string}): Observable<r.WriteResult>">
 export function update(conn: r.Connection, table: string, object: {id: string}, query: IRethinkQuery): Observable<r.WriteResult> {
     return new Observable((o: Observer<r.WriteResult>) => {
         
@@ -219,7 +218,7 @@ export function update(conn: r.Connection, table: string, object: {id: string}, 
         } 
         else {
             if (!query)
-                o.error({message: 'Object does not include and ID'});
+                o.error({message: 'Object does not include an ID'});
             else
                 o.error({message: 'Object can not be null or undefined'});
             o.complete();
@@ -236,7 +235,6 @@ export function update(conn: r.Connection, table: string, object: {id: string}, 
         
     });
 }
-//</editor-fold>
 
 /**
  * remove()
@@ -245,7 +243,6 @@ export function update(conn: r.Connection, table: string, object: {id: string}, 
  * @param <string> table
  * @param <indexName : string, value: string> filter
  */
-//<editor-fold defaultstate="collapsed" desc="remove(conn: r.Connection, table: string, filter:{index: string, value: string}): Observable<r.WriteResult>">
 export function remove(conn: r.Connection, table: string, filter: {index: string, value: string}): Observable<r.WriteResult> {
     return new Observable((o: Observer<r.WriteResult>) => {
         const query = r.table(table).getAll(filter.value, {index: filter.index}).delete();
@@ -258,7 +255,6 @@ export function remove(conn: r.Connection, table: string, filter: {index: string
         })
     });
 }
-//</editor-fold>
 
 /**
  * changes()
@@ -267,7 +263,6 @@ export function remove(conn: r.Connection, table: string, filter: {index: string
  * @param <string> table
  * @returns <Observable> with changes
  */
-//<editor-fold defaultstate="collapsed" desc="changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}>">
 export function changes(conn: r.Connection, data: {table: string, query: IRethinkQuery}): Observable<{new_val: Object, old_val: Object}> {
     return new Observable((o: Observer<{new_val: Object, old_val: Object}>) => {
         
@@ -299,4 +294,3 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
             });
     })
 }
-//</editor-fold>
