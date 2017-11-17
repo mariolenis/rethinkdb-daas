@@ -14,7 +14,7 @@ const env_config_1 = require("./env.config");
 class Server {
     constructor() {
         this.app = express();
-        const whiteList = ['localhost'];
+        const whiteList = ['localhost', '192.168.10.'];
         this.app.use(debug('dev'));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
