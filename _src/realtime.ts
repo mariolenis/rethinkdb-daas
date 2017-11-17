@@ -1,7 +1,11 @@
 import * as db from './daas/db';
+import * as http from 'http';
+import * as https from 'https';
+import * as io from 'socket.io';
 import { Subscription } from 'rxjs/Subscription';
 import { rethinkDBConfig } from './env.config';
 import { IRethinkDBAPIConfig, IRethinkQuery } from './daas/db';
+import { Observable } from 'rxjs/Observable';
 
 interface IObservableWatcher {id: string, subs: Subscription}
 
@@ -15,7 +19,26 @@ export class Realtime {
      * @param <Socket.Server> ioSocket
      */
     constructor(private ioSocket: SocketIO.Server) {
-        
+
+        /**
+         * Middleware to authenticate the connection
+         */
+        this.ioSocket.use((socket, next) => {
+            const query = (socket.handshake.query as {payload: string}).payload;
+            const dbConf = JSON.parse(query) as IRethinkDBAPIConfig;             
+            
+            console.log('[realtime.constructor.middleware] Validating ' + socket.id + ' to connect to ' + dbConf.database + ' with API_KEY ' + dbConf.api_key);
+
+            // Verify the connection is authorized
+            db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb}, 'auth')
+                .flatMap(conn => db.auth(conn, dbConf.api_key))
+                .map(conn => conn.close())
+                .subscribe(
+                    () => next(),
+                    err => next(new Error(err))
+                );
+        })
+
         this.ioSocket.on('connection', (socket: SocketIO.Socket) => {
             console.log('Client Connected ' + socket.id)
             
@@ -34,29 +57,25 @@ export class Realtime {
                     this.watcher.splice(indexObserver, 1);
                 }
             });
+            
+            // Let know that connection is ok
+            socket.emit('connection', socket.id);
         });
     }
 
     private registerConnection(socket: SocketIO.Socket, params: string, responseFn: (response: string) => void): void {
         
-        let [dbConf, queryParams] = JSON.parse(params) as [IRethinkDBAPIConfig, {table: string, query: IRethinkQuery}];
-                
-        console.log('[realtime.constructor] Validating ' + socket.id + ' to connect to ' + dbConf.database + ' with API_KEY ' + dbConf.api_key);
+        const  queryParams = JSON.parse(params) as {database: string, table: string, query: IRethinkQuery};
 
-        // Verify the connection is authorized
-        db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb}, 'auth')
-            .flatMap(conn => db.auth(conn, dbConf.api_key))
-            .map(conn => conn.close())
-
-            // Reconnect to the authorized db
-            .flatMap(() => db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: dbConf.database}, 'table-veryf'))
+        // Connect to the authorized db
+        db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: queryParams.database}, 'table-veryf')
             
             // Verify if table exists, if not, create a new one
-            .flatMap(conn => db.tableVerify(conn, dbConf.database, queryParams.table))
+            .flatMap(conn => db.tableVerify(conn, queryParams.database, queryParams.table))
             
             // Enroll Listener
             .map(conn => {
-                this.enrollChangeListener(dbConf, queryParams, socket.id);
+                this.enrollChangeListener(queryParams, socket.id);
                 return conn;
             })
 
@@ -69,12 +88,12 @@ export class Realtime {
                 
                 // clear the current state 
                 this.ioSocket.to(socket.id)
-                    .emit(queryParams.table, JSON.stringify({}));
+                    .emit(socket.id, JSON.stringify({}));
                 
                 // Send each value of results
                 result.forEach(new_val => {
                     this.ioSocket.to(socket.id)
-                        .emit(queryParams.table, JSON.stringify({new_val: new_val}));
+                        .emit(socket.id, JSON.stringify({new_val: new_val}));
                 });
                 console.log('[realtime.registerConnection] Done!');
             })
@@ -89,7 +108,7 @@ export class Realtime {
      * @param <db: string, table: string> query
      * @param <string> room which matches socket.id
      */
-    private enrollChangeListener(dbConf: IRethinkDBAPIConfig, queryParams: {table: string, query: IRethinkQuery}, room: string) : void {
+    private enrollChangeListener(queryParams: {database: string, table: string, query: IRethinkQuery}, room: string) : void {
         
         // Find in array of memory the observable
         let observer = this.watcher.find(w => w.id === room);
@@ -100,7 +119,7 @@ export class Realtime {
             // Create a new Subsciption of changes and then push new watcher
             this.watcher.push({
                 id: room,
-                subs: this.startSubscription(dbConf.database, queryParams, room)
+                subs: this.startSubscription(queryParams, room)
             });
             
             console.log('[realtime.enrollNameSpace] Enroll (' + room + ') for ' + JSON.stringify(queryParams) + " " + this.watcher.length)
@@ -113,7 +132,7 @@ export class Realtime {
             observer.subs.unsubscribe();
             
             // Create a new one based on the query
-            observer.subs = this.startSubscription(dbConf.database, queryParams, room)
+            observer.subs = this.startSubscription(queryParams, room)
         }
     }
     
@@ -122,9 +141,9 @@ export class Realtime {
      * @param <db: string, table: string, query: db.IRethinkQuery> query
      * @param <string> room which matches socket.id
      */
-    private startSubscription(database: string, queryParams: {table: string, query: IRethinkQuery}, room: string): Subscription {
+    private startSubscription(queryParams: {database: string, table: string, query: IRethinkQuery}, room: string): Subscription {
         
-        return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: database}, 'realtime')
+        return db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: queryParams.database}, 'realtime')
         
             // Start the changes listener
             .flatMap(conn => db.changes(conn, {query: queryParams.query, table: queryParams.table}))
@@ -134,11 +153,13 @@ export class Realtime {
                 changes => {
                     console.log('Emitting changes to ' + room + ' ' + JSON.stringify(queryParams));
                     // By default every socket on connection joins to a room with the .id
-                    this.ioSocket.to(room)
-                        .emit(queryParams.table, JSON.stringify(changes))
+                    this.ioSocket
+                        .emit(room, JSON.stringify(changes))
                 },
-                err => this.ioSocket.to(room)
-                    .emit(queryParams.table, JSON.stringify({err: err}))
+                err => {
+                    this.ioSocket
+                        .emit(room, JSON.stringify({err: err}))
+                }
             )
     }
 }
