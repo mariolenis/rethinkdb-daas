@@ -94,10 +94,19 @@ function list(conn, table, query) {
     return new Observable_1.Observable((o) => {
         let rQuery = r.table(table);
         if (!!query) {
-            if (!!query.filter)
-                rQuery = rQuery.filter(query.filter);
             if (!!query.orderBy)
                 rQuery = rQuery.orderBy(!!query.orderBy.desc ? r.desc(query.orderBy.index) : query.orderBy.index);
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
+            if (!!query.range) {
+                const range = query.range;
+                if (!!range.leftValue && !!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue)));
+                else if (!!range.leftValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
+                else if (!!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+            }
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
         }
@@ -129,10 +138,10 @@ function update(conn, table, object, query) {
         if (!query && !!object && !!object.id && object.id !== '')
             rQuery = rQuery.get(object.id);
         else if (!!object && !!query) {
-            if (!!query.filter)
-                rQuery = rQuery.filter(query.filter);
             if (!!query.orderBy)
                 rQuery = rQuery.orderBy(query.orderBy);
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
         }
@@ -171,10 +180,19 @@ function changes(conn, data) {
     return new Observable_1.Observable((o) => {
         let rQuery = r.table(data.table);
         if (!!data.query) {
-            if (!!data.query.filter)
-                rQuery = rQuery.filter(data.query.filter);
             if (!!data.query.orderBy)
                 rQuery = rQuery.orderBy({ index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
+            if (!!data.query.filter)
+                rQuery = rQuery.filter(data.query.filter);
+            if (!!data.query.range) {
+                const range = data.query.range;
+                if (!!range.leftValue && !!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue)));
+                else if (!!range.leftValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
+                else if (!!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+            }
             if (!!data.query.limit && !!data.query.orderBy)
                 rQuery = rQuery.limit(data.query.limit);
         }
