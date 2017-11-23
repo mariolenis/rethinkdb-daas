@@ -8,7 +8,12 @@ export interface IRethinkQuery {
         desc?: boolean
     }, 
     limit?: number, 
-    filter: Object
+    filter?: Object,
+    range?: {
+        index?: string,
+        leftValue: string | number, 
+        rigthValue: string | number
+    }
 }
 
 export interface IRethinkDBAPIConfig {
@@ -105,7 +110,7 @@ export function tableVerify(conn: r.Connection, db: string, table: string): Obse
  */
 export function insert(conn: r.Connection, table: string, object: Object): Observable<r.WriteResult> {    
     return new Observable((o: Observer<r.WriteResult>) => {
-        
+
         const query: r.Operation<r.WriteResult> = r.table(table).insert(object);
         query.run(conn, (err, result) => {            
             if (err || result.errors > 0)
@@ -159,11 +164,23 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
         
         let rQuery: r.Table | r.Sequence = r.table(table);  
         if (!!query) {
-            if (!!query.filter)
-                rQuery = rQuery.filter(query.filter);
-
             if (!!query.orderBy)
                 rQuery = rQuery.orderBy(!!query.orderBy.desc ? r.desc(query.orderBy.index) : query.orderBy.index);
+
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
+            
+            if (!!query.range) {
+                const range = query.range;
+                if (!!range.leftValue && !!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue) ));
+                
+                else if (!!range.leftValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
+                
+                else if (!!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+            }
 
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
@@ -206,13 +223,13 @@ export function update(conn: r.Connection, table: string, object: {id: string}, 
             rQuery = (rQuery as r.Table).get(object.id);
             
         else if (!!object && !!query) {
-            
-            if (!!query.filter)
-                rQuery = rQuery.filter(query.filter);
-
+                        
             if (!!query.orderBy)
                 rQuery = rQuery.orderBy(query.orderBy);
-
+                
+            if (!!query.filter)
+                rQuery = rQuery.filter(query.filter);
+            
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
         } 
@@ -269,12 +286,24 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
         // Set the table to query
         let rQuery: r.Table | r.Sequence = r.table(data.table);
         if (!!data.query) {
-            if (!!data.query.filter)
-                rQuery = rQuery.filter(data.query.filter);
-            
             if (!!data.query.orderBy)
                 rQuery = rQuery.orderBy({index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
 
+            if (!!data.query.filter)
+                rQuery = rQuery.filter(data.query.filter);
+
+            if (!!data.query.range) {
+                const range = data.query.range;
+                if (!!range.leftValue && !!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue) ));
+                
+                else if (!!range.leftValue)
+                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
+                
+                else if (!!range.rigthValue)
+                    rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+            }
+            
             if (!!data.query.limit && !!data.query.orderBy)
                 rQuery = rQuery.limit(data.query.limit);
         }
