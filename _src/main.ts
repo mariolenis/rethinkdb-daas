@@ -9,22 +9,23 @@ import * as io from 'socket.io';
 import * as routerFn from './routes';
 import { Realtime } from './realtime';
 import { web_api } from './env.config';
-
-import * as cmd from 'node-cmd';
+import { whiteList } from './env.whitehostlist';
 
 export class Server {
     
     app: express.Application = express();
     
     constructor() {
-        const whiteList = ['localhost']
         this.app.use(debug('dev'));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
 
         this.app.use((req, res, next) => {
-            // Website you wish to allow to connect
+            // Website you wish to allow to connect            
             whiteList.forEach(allowed => {
+                if (!req.headers.origin) {
+                    req.headers.origin = req.headers.host;
+                }
                 if (req.headers.origin.indexOf(allowed) > -1) {
                     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
                     return;
@@ -44,6 +45,24 @@ export class Server {
             // Pass to next layer of middleware
             next();
         });
+
+        // Check if it provides landing or serve a webapp
+        if (fs.existsSync(path.join(__dirname, '../public/index.html'))) {
+            // Static
+            this.app.use(express.static(path.join(__dirname, '../public/')));
+            // Any other
+            this.app.get('/*', (req, res: express.Response) => {
+                res.sendfile(path.join(__dirname, '../public/index.html'));
+            });
+        } else {
+            this.app.get('/', (req, res: express.Response) => {
+                res.status(200).send('RethinkDB DaaS - [ Ready ]');
+            });
+        }
+
+        this.app.get('/api', (req, res: express.Response) => {
+            res.status(200).send('Rethink Daas - API Ready!');
+        });
         
         this.app.post('/api/put',       routerFn.putRoute.bind(routerFn.putRoute));
         this.app.post('/api/list',      routerFn.listRoute.bind(routerFn.listRoute));
@@ -53,17 +72,14 @@ export class Server {
         this.app.post('/api/authUser',  routerFn.authUser.bind(routerFn.authUser));
         this.app.post('/api/isAuth',    routerFn.isAuthenticated.bind(routerFn.isAuthenticated));
         
-        this.app.get('/api', (req, res: express.Response) => {
-            res.status(200).send('Rethink Daas - API Ready!');
-        });
-        
         let server: http.Server | https.Server;
+        let secureSever: https.Server;
         try {
 
             // start server with SSL support
             let sslOptions: {key: Buffer, cert: Buffer} = {
-                key: fs.readFileSync(path.join(__dirname, 'ssl/key.pem')),
-                cert: fs.readFileSync(path.join(__dirname, 'ssl/cert.pem'))
+                key: fs.readFileSync(path.join(__dirname, '../ssl/key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, '../ssl/cert.pem'))
             }
 
             server = https.createServer(sslOptions, this.app);
@@ -77,12 +93,12 @@ export class Server {
                     "Location" : "https://" + req.headers['host'] + req.url
                 });
                 res.end();
-            }).listen(web_api.PORT);
+            }).listen(web_api.WEB_PORT);
 
         } catch (e) {
             server = http.createServer(this.app);
-            server.listen(web_api.PORT, () => {
-                console.log('Listening on port ' + web_api.PORT);
+            server.listen(web_api.WEB_PORT, () => {
+                console.log('Listening on port ' + web_api.WEB_PORT);
             });
         }
         
