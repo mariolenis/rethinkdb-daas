@@ -83,7 +83,7 @@ export class Realtime {
 
             // emit to socket
             .map(result => {
-                console.log('[realtime.registerConnection] Emiting result of query to ' + socket.id);
+                console.log('[realtime.registerConnection] Emiting result of query to ' + socket.id + ' ['+ result.length + ']');
                 
                 // clear the current state 
                 this.ioSocket.to(socket.id)
