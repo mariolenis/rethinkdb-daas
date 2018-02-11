@@ -13,7 +13,8 @@ export interface IRethinkQuery {
         index?: string,
         leftValue: string | number, 
         rigthValue: string | number
-    }
+    },
+    ids?: string[]
 }
 
 export interface IRethinkDBAPIConfig {
@@ -161,9 +162,11 @@ export function find(conn: r.Connection, table: string, value: string): Observab
 //<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, query: IRethinkQuery): Observable<Object[]>">
 export function list(conn: r.Connection, table: string, query: IRethinkQuery): Observable<Object[]> {
     return new Observable((o: Observer<Object[]>) => {
-        
-        let rQuery: r.Table | r.Sequence = r.table(table);  
+        let rQuery: r.Table | r.Sequence = r.table(table);
         if (!!query) {
+            if (!!query.ids)
+                rQuery = r.table(table).getAll(...query.ids);
+
             if (!!query.orderBy)
                 rQuery = rQuery.orderBy(!!query.orderBy.desc ? r.desc(query.orderBy.index) : query.orderBy.index);
 
@@ -184,6 +187,7 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
 
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
+
         }      
         try {
             rQuery.run(conn, (err, cursor) => {                
