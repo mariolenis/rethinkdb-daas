@@ -1,6 +1,7 @@
 import * as r from 'rethinkdb';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
+import { isArray } from 'util';
 
 export interface IRethinkQuery {
     orderBy?: {
@@ -133,7 +134,7 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
 export function find(conn: r.Connection, table: string, value: string): Observable<Object> {
     return new Observable((o: Observer<Object[]>) => {
         let query = r.table(table).get(value);
-        query.run(conn, (err, cursor) => {
+        query.run(conn, (err, cursor:any) => {
             if (err)
                 o.error({message: 'Error retrving value ' + value, err: err});
             else {
@@ -290,33 +291,36 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
         // Set the table to query
         let rQuery: r.Table | r.Sequence = r.table(data.table);
         if (!!data.query) {
-            if (!!data.query.ids)
+            if (!!data.query.ids && isArray(data.query.ids)) {
+                // if array of ids is defined, then select only by ids without other filters
                 rQuery = r.table(data.table).getAll(...data.query.ids);
-            
-            if (!!data.query.orderBy)
-                rQuery = rQuery.orderBy({index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
+            } else {
+                // filter by data.query attributes without specific ids
+                if (!!data.query.orderBy)
+                    rQuery = rQuery.orderBy({ index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
 
-            if (!!data.query.filter)
-                rQuery = rQuery.filter(data.query.filter);
+                if (!!data.query.filter)
+                    rQuery = rQuery.filter(data.query.filter);
 
-            if (!!data.query.range) {
-                const range = data.query.range;
-                if (!!range.leftValue && !!range.rigthValue)
-                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue) ));
-                
-                else if (!!range.leftValue)
-                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
-                
-                else if (!!range.rigthValue)
-                    rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+                if (!!data.query.range) {
+                    const range = data.query.range;
+                    if (!!range.leftValue && !!range.rigthValue)
+                        rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue)));
+
+                    else if (!!range.leftValue)
+                        rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
+
+                    else if (!!range.rigthValue)
+                        rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+                }
+
+                if (!!data.query.limit && !!data.query.orderBy)
+                    rQuery = rQuery.limit(data.query.limit);
             }
-            
-            if (!!data.query.limit && !!data.query.orderBy)
-                rQuery = rQuery.limit(data.query.limit);
         }
         
         rQuery
-            .changes()
+            .changes() // { includeInitial: true } can by used to retrieve actual content if no previous list methosd is called
             .run(conn, (err, cursor) => {
                 if (err)
                     o.error(err);
