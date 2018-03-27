@@ -290,6 +290,9 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
         // Set the table to query
         let rQuery: r.Table | r.Sequence = r.table(data.table);
         if (!!data.query) {
+            if (!!data.query.ids)
+                rQuery = r.table(data.table).getAll(...data.query.ids);
+            
             if (!!data.query.orderBy)
                 rQuery = rQuery.orderBy({index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
 
