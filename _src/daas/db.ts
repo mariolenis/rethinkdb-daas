@@ -15,7 +15,12 @@ export interface IRethinkQuery {
         leftValue: string | number, 
         rigthValue: string | number
     },
-    ids?: string[]
+    ids?: string[],
+    in?: {
+        attr: string,
+        values: string[] | number[],
+    }
+
 }
 
 export interface IRethinkDBAPIConfig {
@@ -189,6 +194,21 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
 
+            if (!!query.in && !!query.in.attr && !!query.in.values) {
+                rQuery = rQuery.filter(
+                    // FIXIT: Becase values can be array of numbers, then contains can not be used and conversion to String is imposible because coerceTo('string') is not supported in @types/rethinkdb
+                    // r.js(`(function (row) { \
+                    //     return ${JSON.stringify(query.in.values)}.indexOf(row[${JSON.stringify(query.in.attr)}]) !== -1\
+                    // })`)
+                    // NOTE: Better performance
+                    function (row) {
+                        return r.expr(query.in.values).map(function (val) {
+                            return val.coerceTo('string');
+                        }).contains(row(query.in.attr).coerceTo('string'))
+                    }
+                );
+            }
+
         }      
         try {
             rQuery.run(conn, (err, cursor) => {                
@@ -316,6 +336,22 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
 
                 if (!!data.query.limit && !!data.query.orderBy)
                     rQuery = rQuery.limit(data.query.limit);
+
+                if (!!data.query.in && !!data.query.in.attr && !!data.query.in.values) {
+                    rQuery = rQuery.filter(
+                        // FIXIT: Becase values can be array of numbers, then contains can not be used and conversion to String is imposible because coerceTo('string') is not supported in @types/rethinkdb
+                        // r.js(`(function (row) { \
+                        //     return ${JSON.stringify(data.query.in.values)}.indexOf(row[${JSON.stringify(data.query.in.attr)}]) !== -1\
+                        // })`)
+                        // NOTE: Better performance and usable in changes because r.js is not usable due to: "Cannot call `changes` after a non-deterministic function
+                        function (row) {
+                            return r.expr(data.query.in.values).map(function (val) {
+                                return val.coerceTo('string');
+                            }).contains(row(data.query.in.attr).coerceTo('string'))
+                        }
+                    );
+                }
+
             }
         }
         
