@@ -23,19 +23,23 @@ export class Realtime {
          * Middleware to authenticate the connection
          */
         this.ioSocket.use((socket, next) => {
-            const query = (socket.handshake.query as {payload: string}).payload;
-            const dbConf = JSON.parse(query) as IRethinkDBAPIConfig;             
+            const query = (socket.handshake.query as { payload: string }).payload;
+            if (!query) {
+                next();
+            } else {
+                const dbConf = JSON.parse(query) as IRethinkDBAPIConfig;
             
-            console.log('[realtime.constructor.middleware] Validating ' + socket.id + ' to connect to ' + dbConf.database + ' with API_KEY ' + dbConf.api_key);
+                console.log('[realtime.constructor.middleware] Validating ' + socket.id + ' to connect to ' + dbConf.database + ' with API_KEY ' + dbConf.api_key);
 
-            // Verify the connection is authorized
-            db.connectDB({host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb}, 'auth')
-                .flatMap(conn => db.auth(conn, dbConf.api_key))
-                .map(conn => conn.close())
-                .subscribe(
-                    () => next(),
-                    err => next(new Error(err))
-                );
+                // Verify the connection is authorized
+                db.connectDB({ host: rethinkDBConfig.host, port: rethinkDBConfig.port, db: rethinkDBConfig.authDb }, 'auth')
+                    .flatMap(conn => db.auth(conn, dbConf.api_key))
+                    .map(conn => conn.close())
+                    .subscribe(
+                        () => next(),
+                        err => next(new Error(err))
+                    );
+            }
         })
 
         this.ioSocket.on('connection', (socket: SocketIO.Socket) => {

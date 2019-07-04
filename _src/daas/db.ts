@@ -1,6 +1,7 @@
 import * as r from 'rethinkdb';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
+import { isArray } from 'util';
 
 export interface IRethinkQuery {
     orderBy?: {
@@ -13,7 +14,13 @@ export interface IRethinkQuery {
         index?: string,
         leftValue: string | number, 
         rigthValue: string | number
+    },
+    ids?: string[],
+    in?: {
+        attr: string,
+        values: string[] | number[],
     }
+
 }
 
 export interface IRethinkDBAPIConfig {
@@ -132,7 +139,7 @@ export function insert(conn: r.Connection, table: string, object: Object): Obser
 export function find(conn: r.Connection, table: string, value: string): Observable<Object> {
     return new Observable((o: Observer<Object[]>) => {
         let query = r.table(table).get(value);
-        query.run(conn, (err, cursor) => {
+        query.run(conn, (err, cursor:any) => {
             if (err)
                 o.error({message: 'Error retrving value ' + value, err: err});
             else {
@@ -161,9 +168,11 @@ export function find(conn: r.Connection, table: string, value: string): Observab
 //<editor-fold defaultstate="collapsed" desc="list(conn: r.Connection, table: string, query: IRethinkQuery): Observable<Object[]>">
 export function list(conn: r.Connection, table: string, query: IRethinkQuery): Observable<Object[]> {
     return new Observable((o: Observer<Object[]>) => {
-        
-        let rQuery: r.Table | r.Sequence = r.table(table);  
+        let rQuery: r.Table | r.Sequence = r.table(table);
         if (!!query) {
+            if (!!query.ids)
+                rQuery = r.table(table).getAll(...query.ids);
+
             if (!!query.orderBy)
                 rQuery = rQuery.orderBy(!!query.orderBy.desc ? r.desc(query.orderBy.index) : query.orderBy.index);
 
@@ -184,6 +193,22 @@ export function list(conn: r.Connection, table: string, query: IRethinkQuery): O
 
             if (!!query.limit)
                 rQuery = rQuery.limit(query.limit);
+
+            if (!!query.in && !!query.in.attr && !!query.in.values) {
+                rQuery = rQuery.filter(
+                    // FIXIT: Becase values can be array of numbers, then contains can not be used and conversion to String is imposible because coerceTo('string') is not supported in @types/rethinkdb
+                    // r.js(`(function (row) { \
+                    //     return ${JSON.stringify(query.in.values)}.indexOf(row[${JSON.stringify(query.in.attr)}]) !== -1\
+                    // })`)
+                    // NOTE: Better performance
+                    function (row) {
+                        return r.expr(query.in.values).map(function (val) {
+                            return val.coerceTo('string');
+                        }).contains(row(query.in.attr).coerceTo('string'))
+                    }
+                );
+            }
+
         }      
         try {
             rQuery.run(conn, (err, cursor) => {                
@@ -286,30 +311,52 @@ export function changes(conn: r.Connection, data: {table: string, query: IRethin
         // Set the table to query
         let rQuery: r.Table | r.Sequence = r.table(data.table);
         if (!!data.query) {
-            if (!!data.query.orderBy)
-                rQuery = rQuery.orderBy({index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
+            if (!!data.query.ids && isArray(data.query.ids)) {
+                // if array of ids is defined, then select only by ids without other filters
+                rQuery = r.table(data.table).getAll(...data.query.ids);
+            } else {
+                // filter by data.query attributes without specific ids
+                if (!!data.query.orderBy)
+                    rQuery = rQuery.orderBy({ index: (!!data.query.orderBy.desc ? r.desc(data.query.orderBy.index) : data.query.orderBy.index) });
 
-            if (!!data.query.filter)
-                rQuery = rQuery.filter(data.query.filter);
+                if (!!data.query.filter)
+                    rQuery = rQuery.filter(data.query.filter);
 
-            if (!!data.query.range) {
-                const range = data.query.range;
-                if (!!range.leftValue && !!range.rigthValue)
-                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue) ));
-                
-                else if (!!range.leftValue)
-                    rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
-                
-                else if (!!range.rigthValue)
-                    rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+                if (!!data.query.range) {
+                    const range = data.query.range;
+                    if (!!range.leftValue && !!range.rigthValue)
+                        rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue).and(r.row(range.index).le(range.rigthValue)));
+
+                    else if (!!range.leftValue)
+                        rQuery = rQuery.filter(r.row(range.index).ge(range.leftValue));
+
+                    else if (!!range.rigthValue)
+                        rQuery = rQuery.filter(r.row(range.index).le(range.rigthValue));
+                }
+
+                if (!!data.query.limit && !!data.query.orderBy)
+                    rQuery = rQuery.limit(data.query.limit);
+
+                if (!!data.query.in && !!data.query.in.attr && !!data.query.in.values) {
+                    rQuery = rQuery.filter(
+                        // FIXIT: Becase values can be array of numbers, then contains can not be used and conversion to String is imposible because coerceTo('string') is not supported in @types/rethinkdb
+                        // r.js(`(function (row) { \
+                        //     return ${JSON.stringify(data.query.in.values)}.indexOf(row[${JSON.stringify(data.query.in.attr)}]) !== -1\
+                        // })`)
+                        // NOTE: Better performance and usable in changes because r.js is not usable due to: "Cannot call `changes` after a non-deterministic function
+                        function (row) {
+                            return r.expr(data.query.in.values).map(function (val) {
+                                return val.coerceTo('string');
+                            }).contains(row(data.query.in.attr).coerceTo('string'))
+                        }
+                    );
+                }
+
             }
-            
-            if (!!data.query.limit && !!data.query.orderBy)
-                rQuery = rQuery.limit(data.query.limit);
         }
         
         rQuery
-            .changes()
+            .changes() // { includeInitial: true } can by used to retrieve actual content if no previous list methosd is called
             .run(conn, (err, cursor) => {
                 if (err)
                     o.error(err);
