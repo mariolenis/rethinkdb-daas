@@ -21,7 +21,7 @@
     "morgan": "^1.8.1",
     "rethinkdb": "^2.3.3",
     "rxjs": "^5.4.0",
-    "socket.io": "^2.0.4"
+    "socket.io": "^2.5.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.4",
